@@ -1,4 +1,4 @@
-"""Conversation support for OpenAI Compatible APIs."""
+"""Conversation support for Nova Conversation (OpenAI Compatible APIs)."""
 
 from collections.abc import Callable
 import json
@@ -26,7 +26,8 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import chat_session, device_registry as dr, intent, llm
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import OpenAICompatibleConfigEntry
+# Note: These relative imports pull from your new Nova ConfigEntry type
+from . import NovaConfigEntry
 from .const import (
     CONF_CHAT_MODEL,
     CONF_MAX_TOKENS,
@@ -46,11 +47,11 @@ MAX_TOOL_ITERATIONS = 99
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: OpenAICompatibleConfigEntry,
+    config_entry: NovaConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up conversation entities."""
-    agent = OpenAICompatibleConversationEntity(config_entry)
+    """Set up Nova conversation entities."""
+    agent = NovaConversationEntity(config_entry)
     async_add_entities([agent])
 
 def _format_tool(
@@ -64,31 +65,6 @@ def _format_tool(
     if tool.description:
         tool_spec["description"] = tool.description
     return ChatCompletionToolParam(type="function", function=tool_spec)
-
-def _convert_message_to_param(
-    message: ChatCompletionMessage,
-) -> ChatCompletionMessageParam:
-    """Convert an OpenAI message object to a standard parameter dictionary."""
-    tool_calls: list[ChatCompletionMessageToolCallParam] = []
-    if message.tool_calls:
-        tool_calls = [
-            ChatCompletionMessageToolCallParam(
-                id=tool_call.id,
-                function=Function(
-                    arguments=tool_call.function.arguments,
-                    name=tool_call.function.name,
-                ),
-                type=tool_call.type,
-            )
-            for tool_call in message.tool_calls
-        ]
-    param = ChatCompletionAssistantMessageParam(
-        role=message.role,
-        content=message.content,
-    )
-    if tool_calls:
-        param["tool_calls"] = tool_calls
-    return param
 
 def _convert_content_to_param(
     content: conversation.Content,
@@ -124,23 +100,23 @@ def _convert_content_to_param(
         ],
     )
 
-class OpenAICompatibleConversationEntity(
+class NovaConversationEntity(
     conversation.ConversationEntity, conversation.AbstractConversationAgent
 ):
-    """The central conversation agent for OpenAI-compatible APIs."""
+    """The central conversation agent for Nova (OpenAI-compatible APIs)."""
 
     _attr_has_entity_name = True
     _attr_name = None
 
-    def __init__(self, entry: OpenAICompatibleConfigEntry) -> None:
+    def __init__(self, entry: NovaConfigEntry) -> None:
         """Initialize the agent with device registry info."""
         self.entry = entry
         self._attr_unique_id = entry.entry_id
         self._attr_device_info = dr.DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title,
-            manufacturer="OpenAI Compatible",
-            model="Local & Cloud LLM Agent",
+            manufacturer="Nova AI",
+            model="Nova High-Speed Agent",
             entry_type=dr.DeviceEntryType.SERVICE,
         )
         if self.entry.options.get(CONF_LLM_HASS_API):
@@ -186,7 +162,7 @@ class OpenAICompatibleConversationEntity(
         user_input: conversation.ConversationInput,
         chat_log: conversation.ChatLog,
     ) -> conversation.ConversationResult:
-        """Execute the API call and let HA handle the tool execution loops."""
+        """Execute the API call and handle the high-speed tool loop."""
         assert user_input.agent_id
         options = self.entry.options
 
@@ -208,7 +184,7 @@ class OpenAICompatibleConversationEntity(
             if options.get(CONF_PROMPT):
                 chat_log.system_prompt = options[CONF_PROMPT]
         except Exception as err:
-            LOGGER.error("Failed to set LLM context: %s", err)
+            LOGGER.error("Failed to set Nova LLM context: %s", err)
 
         enable_tools = options.get(CONF_ENABLE_TOOLS, True)
         tools: list[ChatCompletionToolParam] | None = None
@@ -221,6 +197,8 @@ class OpenAICompatibleConversationEntity(
         
         messages = [_convert_content_to_param(content) for content in chat_log.content]
         client = self.entry.runtime_data
+
+        accumulated_content = ""
 
         for iteration in range(MAX_TOOL_ITERATIONS):
             model_args = {
@@ -239,11 +217,10 @@ class OpenAICompatibleConversationEntity(
             try:
                 stream = await client.chat.completions.create(**model_args)
             except openai.RateLimitError as err:
-                 raise HomeAssistantError("Rate limited or insufficient funds. Check your API provider.") from err
+                 raise HomeAssistantError("Nova: Rate limited or insufficient funds.") from err
             except openai.OpenAIError as err:
-                raise HomeAssistantError("Failed to communicate with the LLM provider.") from err
+                raise HomeAssistantError("Nova: Failed to communicate with the LLM provider.") from err
 
-            accumulated_content = ""
             tool_calls_buffer = {}
 
             async def _process_stream():
@@ -256,7 +233,6 @@ class OpenAICompatibleConversationEntity(
                         
                         if delta.content:
                             accumulated_content += delta.content
-                            # FIX: Use the strict AssistantContentDeltaDict to stop HA from overwriting the memory
                             yield conversation.AssistantContentDeltaDict(
                                 role="assistant", 
                                 content=delta.content
@@ -274,7 +250,7 @@ class OpenAICompatibleConversationEntity(
                                     if tool_call.function and tool_call.function.arguments:
                                         tool_calls_buffer[idx]["arguments"] += tool_call.function.arguments
                 except openai.APIError as stream_err:
-                    LOGGER.error("Stream error: %s", stream_err)
+                    LOGGER.error("Nova stream error: %s", stream_err)
 
                 if tool_calls_buffer:
                     parsed_tool_calls = []
@@ -291,7 +267,6 @@ class OpenAICompatibleConversationEntity(
                             LOGGER.error("Failed to parse tool arguments")
                     
                     if parsed_tool_calls:
-                        # FIX: Format tool calls properly for HA 2026.1
                         yield conversation.AssistantContentDeltaDict(
                             role="assistant", 
                             tool_calls=parsed_tool_calls
@@ -310,11 +285,10 @@ class OpenAICompatibleConversationEntity(
                 break
                 
             if iteration == MAX_TOOL_ITERATIONS - 1:
-                LOGGER.warning("LLM reached max tool iterations. Forced stop.")
+                LOGGER.warning("Nova reached max tool iterations.")
 
         intent_response = intent.IntentResponse(language=user_input.language)
         
-        # FIX: Explicitly push our accumulated text to the screen to bypass any memory glitches
         if accumulated_content.strip():
             intent_response.async_set_speech(accumulated_content.strip())
         
