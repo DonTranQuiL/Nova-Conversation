@@ -31,13 +31,14 @@ SERVICE_GENERATE_IMAGE = "generate_image"
 PLATFORMS = (Platform.CONVERSATION,)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-type OpenAICompatibleConfigEntry = ConfigEntry[openai.AsyncClient]
+# Rebranded type definition
+type NovaConfigEntry = ConfigEntry[openai.AsyncClient]
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the OpenAI Compatible Conversation integration."""
+    """Set up the Nova Conversation integration."""
 
     async def render_image(call: ServiceCall) -> ServiceResponse:
-        """Render an image using the configured OpenAI compatible API."""
+        """Render an image using the configured Nova compatible API."""
         entry_id = call.data["config_entry"]
         entry = hass.config_entries.async_get_entry(entry_id)
 
@@ -54,11 +55,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             # We enforce dall-e-3 as the default image generation model
             response = await client.images.generate(
                 model="dall-e-3",
+                output_format="url",
                 prompt=call.data["prompt"],
                 size=call.data["size"],
                 quality=call.data["quality"],
                 style=call.data["style"],
-                response_format="url",
                 n=1,
             )
         except openai.RateLimitError as err:
@@ -68,7 +69,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             _LOGGER.error("API Error generating image: %s", err)
             raise HomeAssistantError(f"Error generating image: {err}") from err
 
-        # Exclude b64_json to keep the response clean and lightweight
         return response.data[0].model_dump(exclude={"b64_json"})
 
     hass.services.async_register(
@@ -92,8 +92,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
     return True
 
-async def async_setup_entry(hass: HomeAssistant, entry: OpenAICompatibleConfigEntry) -> bool:
-    """Set up the API client from a config entry."""
+async def async_setup_entry(hass: HomeAssistant, entry: NovaConfigEntry) -> bool:
+    """Set up the Nova API client from a config entry."""
     client = openai.AsyncOpenAI(
         api_key=entry.data[CONF_API_KEY],
         http_client=get_async_client(hass),
@@ -101,16 +101,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: OpenAICompatibleConfigEn
     )
 
     # Pre-cache platform headers to optimize subsequent requests
-    await hass.async_add_executor_job(client.platform_headers)
+    try:
+        await hass.async_add_executor_job(lambda: client.platform_headers)
+    except Exception:
+         # Some local providers don't support platform headers; skip if it fails.
+        pass
 
     try:
         # Validate connection with a strict 10-second timeout
-        await hass.async_add_executor_job(client.with_options(timeout=10.0).models.list)
+        await client.with_options(timeout=10.0).models.list()
     except openai.AuthenticationError as err:
-        _LOGGER.error("Authentication failed. Please verify your API key: %s", err)
+        _LOGGER.error("Authentication failed for Nova. Please verify your API key: %s", err)
         return False
     except openai.OpenAIError as err:
-        _LOGGER.warning("Connection to API failed, retrying later: %s", err)
+        _LOGGER.warning("Connection to Nova API failed, retrying later: %s", err)
         raise ConfigEntryNotReady(err) from err
 
     entry.runtime_data = client
@@ -118,5 +122,5 @@ async def async_setup_entry(hass: HomeAssistant, entry: OpenAICompatibleConfigEn
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Safely unload the integration and its platforms."""
+    """Safely unload the Nova integration and its platforms."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
