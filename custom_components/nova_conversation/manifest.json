@@ -1,7 +1,7 @@
 {
   "domain": "nova_conversation",
   "name": "Nova Conversation",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "documentation": "https://github.com/DonTranQuiL/nova-conversation",
   "issue_tracker": "https://github.com/DonTranQuiL/nova-conversation/issues",
   "after_dependencies": ["assist_pipeline", "intent"],
