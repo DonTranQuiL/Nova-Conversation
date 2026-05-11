@@ -1,0 +1,14 @@
+{
+  "domain": "nova_conversation",
+  "name": "Nova Conversation",
+  "version": "1.0.0",
+  "documentation": "https://github.com/DonTranQuiL/nova-conversation",
+  "issue_tracker": "https://github.com/DonTranQuiL/nova-conversation/issues",
+  "after_dependencies": ["assist_pipeline", "intent"],
+  "codeowners": ["@DonTranQuiL"],
+  "config_flow": true,
+  "dependencies": ["conversation"],
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "requirements": ["openai>=1.61.0"]
+}
