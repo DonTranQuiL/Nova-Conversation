@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import base64
 import logging
 import openai
 import voluptuous as vol
 
+from homeassistant.components.camera import async_get_image
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, Platform
 from homeassistant.core import (
@@ -28,6 +30,7 @@ from .const import DOMAIN, CONF_BASE_URL
 _LOGGER = logging.getLogger(__name__)
 
 SERVICE_GENERATE_IMAGE = "generate_image"
+SERVICE_ANALYZE_CAMERA = "analyze_camera"  # The new Vision service
 PLATFORMS = (Platform.CONVERSATION,)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -72,6 +75,59 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         # Strip heavy base64 strings to keep the event bus clean
         return api_response.data[0].model_dump(exclude={"b64_json"})
 
+    async def analyze_camera_snapshot(call: ServiceCall) -> ServiceResponse:
+        """Take a snapshot from a camera and analyze it using Nova Vision."""
+        entry_id = call.data["config_entry"]
+        camera_entity = call.data["camera_entity"]
+        prompt = call.data.get("prompt", "Describe exactly what you see in this image.")
+        
+        target_entry = hass.config_entries.async_get_entry(entry_id)
+
+        if target_entry is None or target_entry.domain != DOMAIN:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_config_entry",
+                translation_placeholders={"config_entry": entry_id},
+            )
+
+        nova_client: openai.AsyncClient = target_entry.runtime_data
+
+        try:
+            # 1. Grab the live image from the Home Assistant camera
+            image = await async_get_image(hass, camera_entity)
+            # 2. Encode it so the AI can read it
+            b64_img = base64.b64encode(image.content).decode("utf-8")
+            mime_type = image.content_type
+            
+            # 3. Send it to OpenRouter's vision model
+            api_response = await nova_client.chat.completions.create(
+                model="openai/gpt-4o",  # Excellent vision capabilities via OpenRouter
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url", 
+                                "image_url": {"url": f"data:{mime_type};base64,{b64_img}"}
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=300,
+            )
+            
+            # Return the text description
+            return {"description": api_response.choices[0].message.content}
+            
+        except HomeAssistantError as err:
+            _LOGGER.error("Nova Vision: Failed to get camera image (%s)", err)
+            raise ServiceValidationError(f"Could not read from camera {camera_entity}") from err
+        except openai.OpenAIError as err:
+            _LOGGER.error("Nova Vision: Provider rejected request (%s)", err)
+            raise HomeAssistantError(f"Failed to analyze image: {err}") from err
+
+    # Register the Image Generation Service
     hass.services.async_register(
         DOMAIN,
         SERVICE_GENERATE_IMAGE,
@@ -91,6 +147,26 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         ),
         supports_response=SupportsResponse.ONLY,
     )
+
+    # Register the Camera Analysis Service
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_ANALYZE_CAMERA,
+        analyze_camera_snapshot,
+        schema=vol.Schema(
+            {
+                vol.Required("config_entry"): selector.ConfigEntrySelector(
+                    {"integration": DOMAIN}
+                ),
+                vol.Required("camera_entity"): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="camera")
+                ),
+                vol.Optional("prompt"): cv.string,
+            }
+        ),
+        supports_response=SupportsResponse.ONLY,
+    )
+
     return True
 
 
