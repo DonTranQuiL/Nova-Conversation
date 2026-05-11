@@ -1,4 +1,4 @@
-"""Nova Conversation."""
+"""Initialize the Nova Conversation integration."""
 
 from __future__ import annotations
 
@@ -31,29 +31,29 @@ SERVICE_GENERATE_IMAGE = "generate_image"
 PLATFORMS = (Platform.CONVERSATION,)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-# Rebranded type definition
 type NovaConfigEntry = ConfigEntry[openai.AsyncClient]
 
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the Nova Conversation integration."""
+    """Set up the Nova Conversation global services."""
 
-    async def render_image(call: ServiceCall) -> ServiceResponse:
-        """Render an image using the configured Nova compatible API."""
+    async def generate_dalle_image(call: ServiceCall) -> ServiceResponse:
+        """Handle requests to render an image using the configured AI provider."""
         entry_id = call.data["config_entry"]
-        entry = hass.config_entries.async_get_entry(entry_id)
+        target_entry = hass.config_entries.async_get_entry(entry_id)
 
-        if entry is None or entry.domain != DOMAIN:
+        if target_entry is None or target_entry.domain != DOMAIN:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="invalid_config_entry",
                 translation_placeholders={"config_entry": entry_id},
             )
 
-        client: openai.AsyncClient = entry.runtime_data
+        nova_client: openai.AsyncClient = target_entry.runtime_data
 
         try:
-            # We enforce dall-e-3 as the default image generation model
-            response = await client.images.generate(
+            # Note: Hardcoded to dall-e-3 as it provides the most consistent URL formats
+            api_response = await nova_client.images.generate(
                 model="dall-e-3",
                 output_format="url",
                 prompt=call.data["prompt"],
@@ -63,18 +63,19 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 n=1,
             )
         except openai.RateLimitError as err:
-            _LOGGER.error("Rate limit exceeded while generating image: %s", err)
-            raise HomeAssistantError("Rate limit exceeded. Please check your API quota.") from err
+            _LOGGER.error("Nova Image Generation: Quota exceeded (%s)", err)
+            raise HomeAssistantError("Rate limit exceeded. Check your API dashboard.") from err
         except openai.OpenAIError as err:
-            _LOGGER.error("API Error generating image: %s", err)
-            raise HomeAssistantError(f"Error generating image: {err}") from err
+            _LOGGER.error("Nova Image Generation: Provider rejected request (%s)", err)
+            raise HomeAssistantError(f"Failed to generate image: {err}") from err
 
-        return response.data[0].model_dump(exclude={"b64_json"})
+        # Strip heavy base64 strings to keep the event bus clean
+        return api_response.data[0].model_dump(exclude={"b64_json"})
 
     hass.services.async_register(
         DOMAIN,
         SERVICE_GENERATE_IMAGE,
-        render_image,
+        generate_dalle_image,
         schema=vol.Schema(
             {
                 vol.Required("config_entry"): selector.ConfigEntrySelector(
@@ -92,9 +93,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
     return True
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: NovaConfigEntry) -> bool:
-    """Set up the Nova API client from a config entry."""
-    client = openai.AsyncOpenAI(
+    """Initialize the asynchronous OpenAI client for the Nova integration."""
+    nova_client = openai.AsyncOpenAI(
         api_key=entry.data[CONF_API_KEY],
         http_client=get_async_client(hass),
         base_url=entry.data[CONF_BASE_URL],
@@ -102,25 +104,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: NovaConfigEntry) -> bool
 
     # Pre-cache platform headers to optimize subsequent requests
     try:
-        await hass.async_add_executor_job(lambda: client.platform_headers)
+        await hass.async_add_executor_job(lambda: nova_client.platform_headers)
     except Exception:
-         # Some local providers don't support platform headers; skip if it fails.
+         # Some local providers (e.g., LM Studio) don't support platform headers
         pass
 
     try:
-        # Validate connection with a strict 10-second timeout
-        await client.with_options(timeout=10.0).models.list()
+        # Ping the provider to validate credentials before completing setup
+        await nova_client.with_options(timeout=10.0).models.list()
     except openai.AuthenticationError as err:
-        _LOGGER.error("Authentication failed for Nova. Please verify your API key: %s", err)
+        _LOGGER.error("Nova Setup: Invalid API key or unauthorized. (%s)", err)
         return False
     except openai.OpenAIError as err:
-        _LOGGER.warning("Connection to Nova API failed, retrying later: %s", err)
+        _LOGGER.warning("Nova Setup: Provider unreachable, will retry. (%s)", err)
         raise ConfigEntryNotReady(err) from err
 
-    entry.runtime_data = client
+    entry.runtime_data = nova_client
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Safely unload the Nova integration and its platforms."""
+    """Safely tear down the Nova integration and clear listeners."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
