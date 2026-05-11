@@ -1,9 +1,12 @@
 {
+  "title": "Nova Conversation",
   "config": {
     "step": {
       "user": {
+        "title": "Nova: Connect your AI",
         "data": {
-          "api_key": "[%key:common::config_flow::data::api_key%]"
+          "api_key": "[%key:common::config_flow::data::api_key%]",
+          "base_url": "Base URL (e.g. OpenRouter, LM Studio)"
         }
       }
     },
@@ -18,52 +21,53 @@
       "init": {
         "data": {
           "prompt": "Instructions",
-          "chat_model": "[%key:common::generic::model%]",
-          "max_tokens": "Maximum tokens to return in response",
-          "temperature": "Temperature",
+          "chat_model": "AI Model",
+          "max_tokens": "Maximum tokens to return",
+          "temperature": "Temperature (Creativity)",
           "top_p": "Top P",
-          "llm_hass_api": "[%key:common::config_flow::data::llm_hass_api%]",
-          "recommended": "Recommended model settings",
-          "base_url": "Base URL of OpenAI compatible API"
+          "llm_hass_api": "Control Home Assistant (LLM API)",
+          "recommended": "Use recommended model settings",
+          "base_url": "API Base URL",
+          "enable_tools": "Enable Smart Home Tools"
         },
         "data_description": {
-          "prompt": "Instruct how the LLM should respond. This can be a template."
+          "prompt": "Instruct how the Nova AI should respond. You can use templates here."
         }
       }
     }
   },
   "services": {
     "generate_image": {
-      "name": "Generate image",
-      "description": "Turn a prompt into an image",
+      "name": "Nova: Generate Image",
+      "description": "Use Nova to turn a text prompt into an image",
       "fields": {
         "config_entry": {
           "name": "Config Entry",
-          "description": "The config entry to use for this action"
+          "description": "Select the Nova instance to use"
         },
         "prompt": {
           "name": "Prompt",
-          "description": "The text to turn into an image",
-          "example": "A photo of a dog"
+          "description": "What should Nova create?",
+          "example": "A futuristic smart home in the mountains"
         },
         "size": {
           "name": "Size",
-          "description": "The size of the image to generate"
+          "description": "Resolution of the image"
         },
         "quality": {
           "name": "Quality",
-          "description": "The quality of the image that will be generated"
+          "description": "Standard or High Definition"
         },
         "style": {
           "name": "Style",
-          "description": "The style of the generated image"
+          "description": "Vivid or Natural style"
         }
       }
     }
   },
   "exceptions": {
     "invalid_config_entry": {
-      "message": "Invalid config entry provided. Got {config_entry}"
+      "message": "Invalid Nova config entry provided. Got {config_entry}"
     }
   }
 }
