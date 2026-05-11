@@ -36,5 +36,31 @@ generate_image:
       selector:
         select:
           options:
+
+analyze_camera:
+  name: "Nova: Analyze Camera"
+  description: "Takes a snapshot from a camera and asks the Nova AI to describe it."
+  fields:
+    config_entry:
+      name: "Config Entry"
+      description: "Select the Nova instance to use."
+      required: true
+      selector:
+        config_entry:
+          integration: nova_conversation
+    camera_entity:
+      name: "Camera"
+      description: "The camera to look at."
+      required: true
+      selector:
+        entity:
+          domain: camera
+    prompt:
+      name: "Prompt"
+      description: "What do you want Nova to look for? (e.g., 'Is there a package on the porch?')"
+      required: false
+      selector:
+        text:
+          multiline: true
             - "vivid"
             - "natural"
