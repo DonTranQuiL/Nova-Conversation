@@ -70,7 +70,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> None:
     await hass.async_add_executor_job(client.with_options(timeout=10.0).models.list)
 
 
-class OpenAICompatibleConfigFlow(ConfigFlow, domain=DOMAIN):
+class NovaConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -89,7 +89,7 @@ class OpenAICompatibleConfigFlow(ConfigFlow, domain=DOMAIN):
             errors["base"] = "unknown"
         else:
             return self.async_create_entry(
-                title="OpenAI Compatible",
+                title="Nova Conversation",
                 data=user_input,
                 options=RECOMMENDED_OPTIONS,
             )
@@ -98,10 +98,10 @@ class OpenAICompatibleConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
-        return OpenAICompatibleOptionsFlow(config_entry)
+        return NovaOptionsFlow(config_entry)
 
 
-class OpenAICompatibleOptionsFlow(OptionsFlow):
+class NovaOptionsFlow(OptionsFlow):
     def __init__(self, config_entry: ConfigEntry) -> None:
         self.last_rendered_recommended = config_entry.options.get(CONF_RECOMMENDED, False)
         self.available_models: list[str] = []
@@ -136,10 +136,10 @@ class OpenAICompatibleOptionsFlow(OptionsFlow):
                 CONF_ENABLE_TOOLS: user_input.get(CONF_ENABLE_TOOLS, True),
             }
 
-        schema = self.openai_compatible_config_option_schema(options)
+        schema = self.nova_config_option_schema(options)
         return self.async_show_form(step_id="init", data_schema=vol.Schema(schema))
 
-    def openai_compatible_config_option_schema(self, options: dict[str, Any]) -> VolDictType:
+    def nova_config_option_schema(self, options: dict[str, Any]) -> VolDictType:
         hass_apis: list[SelectOptionDict] = [SelectOptionDict(label="No control", value="none")]
         hass_apis.extend(SelectOptionDict(label=api.name, value=api.id) for api in llm.async_get_apis(self.hass))
 
