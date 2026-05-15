@@ -1,14 +1,23 @@
 {
   "domain": "nova_conversation",
   "name": "Nova Conversation",
-  "version": "1.0.5",
-  "documentation": "https://github.com/DonTranQuiL/nova-conversation",
-  "issue_tracker": "https://github.com/DonTranQuiL/nova-conversation/issues",
-  "after_dependencies": ["assist_pipeline", "intent"],
-  "codeowners": ["@DonTranQuiL"],
+  "after_dependencies": [
+    "assist_pipeline",
+    "intent"
+  ],
+  "codeowners": [
+    "@DonTranQuiL"
+  ],
   "config_flow": true,
-  "dependencies": ["conversation"],
+  "dependencies": [
+    "conversation"
+  ],
+  "documentation": "https://github.com/DonTranQuiL/nova-conversation",
   "integration_type": "service",
+  "issue_tracker": "https://github.com/DonTranQuiL/nova-conversation/issues",
   "iot_class": "cloud_polling",
-  "requirements": ["openai>=1.61.0"]
+  "requirements": [
+    "openai>=1.61.0"
+  ],
+  "version": "1.0.5"
 }
