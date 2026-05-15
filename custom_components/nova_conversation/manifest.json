@@ -14,8 +14,8 @@
   ],
   "documentation": "https://github.com/DonTranQuiL/nova-conversation",
   "integration_type": "service",
-  "issue_tracker": "https://github.com/DonTranQuiL/nova-conversation/issues",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/DonTranQuiL/nova-conversation/issues",
   "requirements": [
     "openai>=1.61.0"
   ],
