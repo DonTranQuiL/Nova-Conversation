@@ -64,7 +64,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             )
         except openai.RateLimitError as err:
             _LOGGER.error("Nova Image Generation: Quota exceeded (%s)", err)
-            raise HomeAssistantError("Rate limit exceeded. Check your API dashboard.") from err
+            raise HomeAssistantError(
+                "Rate limit exceeded. Check your API dashboard."
+            ) from err
         except openai.OpenAIError as err:
             _LOGGER.error("Nova Image Generation: Provider rejected request (%s)", err)
             raise HomeAssistantError(f"Failed to generate image: {err}") from err
@@ -106,7 +108,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NovaConfigEntry) -> bool
     try:
         await hass.async_add_executor_job(lambda: nova_client.platform_headers)
     except Exception:
-         # Some local providers (e.g., LM Studio) don't support platform headers
+        # Some local providers (e.g., LM Studio) don't support platform headers
         pass
 
     try:

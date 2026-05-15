@@ -60,10 +60,12 @@ class NovaConversationEntity(
             model="Nova High-Speed Agent",
             entry_type=dr.DeviceEntryType.SERVICE,
         )
-        
+
         # Enable tool-calling UI features if configured
         if self.entry.options.get(CONF_LLM_HASS_API):
-            self._attr_supported_features = conversation.ConversationEntityFeature.CONTROL
+            self._attr_supported_features = (
+                conversation.ConversationEntityFeature.CONTROL
+            )
 
     @property
     def supported_languages(self) -> list[str] | Literal["*"]:
@@ -73,12 +75,12 @@ class NovaConversationEntity(
     async def async_added_to_hass(self) -> None:
         """Hook into the pipeline engine when added to Home Assistant."""
         await super().async_added_to_hass()
-        
+
         if hasattr(assist_pipeline, "async_migrate_engine"):
             assist_pipeline.async_migrate_engine(
                 self.hass, "conversation", self.entry.entry_id, self.entity_id
             )
-            
+
         conversation.async_set_agent(self.hass, self.entry, self)
         self.entry.async_on_unload(
             self.entry.add_update_listener(self._async_entry_update_listener)
@@ -120,7 +122,7 @@ class NovaConversationEntity(
                 assistant=conversation.DOMAIN,
                 device_id=getattr(user_input, "device_id", None),
             )
-            
+
             if config_options.get(CONF_LLM_HASS_API):
                 chat_log.llm_api = await llm.async_get_api(
                     self.hass, config_options[CONF_LLM_HASS_API], llm_context
@@ -133,15 +135,16 @@ class NovaConversationEntity(
         # 2. Format Tools & Messages
         tools_enabled = config_options.get(CONF_ENABLE_TOOLS, True)
         active_tools = None
-        
+
         if tools_enabled and chat_log.llm_api:
             active_tools = [
                 format_ha_tool_for_openai(tool, chat_log.llm_api.custom_serializer)
                 for tool in chat_log.llm_api.tools
             ]
-        
+
         conversation_history = [
-            convert_ha_content_to_openai_message(content) for content in chat_log.content
+            convert_ha_content_to_openai_message(content)
+            for content in chat_log.content
         ]
 
         text_response_buffer = ""
@@ -151,21 +154,29 @@ class NovaConversationEntity(
             payload = {
                 "model": config_options.get(CONF_CHAT_MODEL, RECOMMENDED_CHAT_MODEL),
                 "messages": conversation_history,
-                "max_tokens": config_options.get(CONF_MAX_TOKENS, RECOMMENDED_MAX_TOKENS),
+                "max_tokens": config_options.get(
+                    CONF_MAX_TOKENS, RECOMMENDED_MAX_TOKENS
+                ),
                 "top_p": config_options.get(CONF_TOP_P, RECOMMENDED_TOP_P),
-                "temperature": config_options.get(CONF_TEMPERATURE, RECOMMENDED_TEMPERATURE),
+                "temperature": config_options.get(
+                    CONF_TEMPERATURE, RECOMMENDED_TEMPERATURE
+                ),
                 "user": chat_log.conversation_id,
-                "stream": True, 
+                "stream": True,
             }
             if active_tools:
                 payload["tools"] = active_tools
-            
+
             try:
                 stream_response = await api_client.chat.completions.create(**payload)
             except openai.RateLimitError as err:
-                 raise HomeAssistantError("Nova: API quota exceeded or rate limited.") from err
+                raise HomeAssistantError(
+                    "Nova: API quota exceeded or rate limited."
+                ) from err
             except openai.OpenAIError as err:
-                raise HomeAssistantError(f"Nova: Connection to provider failed: {err}") from err
+                raise HomeAssistantError(
+                    f"Nova: Connection to provider failed: {err}"
+                ) from err
 
             active_tool_calls = {}
 
@@ -176,16 +187,16 @@ class NovaConversationEntity(
                     async for chunk in stream_response:
                         if not chunk.choices:
                             continue
-                        
+
                         delta = chunk.choices[0].delta
-                        
+
                         # Handle text tokens
                         if delta.content:
                             text_response_buffer += delta.content
                             yield conversation.AssistantContentDeltaDict(
                                 role="assistant", content=delta.content
                             )
-                            
+
                         # Handle tool call fragments
                         if delta.tool_calls:
                             for tc in delta.tool_calls:
@@ -194,11 +205,15 @@ class NovaConversationEntity(
                                     active_tool_calls[idx] = {
                                         "id": tc.id,
                                         "name": tc.function.name if tc.function else "",
-                                        "arguments": tc.function.arguments if tc.function else ""
+                                        "arguments": tc.function.arguments
+                                        if tc.function
+                                        else "",
                                     }
                                 else:
                                     if tc.function and tc.function.arguments:
-                                        active_tool_calls[idx]["arguments"] += tc.function.arguments
+                                        active_tool_calls[idx]["arguments"] += (
+                                            tc.function.arguments
+                                        )
                 except openai.APIError as stream_err:
                     LOGGER.error("Nova: Stream interrupted: %s", stream_err)
 
@@ -215,8 +230,10 @@ class NovaConversationEntity(
                                 )
                             )
                         except json.JSONDecodeError:
-                            LOGGER.error("Nova: Model provided invalid JSON for tool execution.")
-                    
+                            LOGGER.error(
+                                "Nova: Model provided invalid JSON for tool execution."
+                            )
+
                     if finalized_calls:
                         yield conversation.AssistantContentDeltaDict(
                             role="assistant", tool_calls=finalized_calls
@@ -224,11 +241,12 @@ class NovaConversationEntity(
 
             # Process the stream natively via Home Assistant
             new_log_entries = [
-                content async for content in chat_log.async_add_delta_content_stream(
+                content
+                async for content in chat_log.async_add_delta_content_stream(
                     user_input.agent_id, _stream_generator()
                 )
             ]
-            
+
             # Append new data to history for the next potential tool iteration
             conversation_history.extend(
                 [convert_ha_content_to_openai_message(c) for c in new_log_entries]
@@ -237,17 +255,19 @@ class NovaConversationEntity(
             # Break loop if the AI is finished invoking tools
             if not getattr(chat_log, "unresponded_tool_results", False):
                 break
-                
+
             if iteration == MAX_TOOL_RETRIES - 1:
-                LOGGER.warning("Nova: Emergency circuit breaker hit. Maximum tool iterations reached.")
+                LOGGER.warning(
+                    "Nova: Emergency circuit breaker hit. Maximum tool iterations reached."
+                )
 
         # 4. Finalize Intent
         intent_response = intent.IntentResponse(language=user_input.language)
         if text_response_buffer.strip():
             intent_response.async_set_speech(text_response_buffer.strip())
-        
+
         return conversation.ConversationResult(
-            response=intent_response, 
+            response=intent_response,
             conversation_id=chat_log.conversation_id,
             continue_conversation=chat_log.continue_conversation,
         )

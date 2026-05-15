@@ -66,16 +66,22 @@ RECOMMENDED_OPTIONS = {
 
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> None:
-    client = openai.AsyncOpenAI(api_key=data[CONF_API_KEY], base_url=data[CONF_BASE_URL])
+    client = openai.AsyncOpenAI(
+        api_key=data[CONF_API_KEY], base_url=data[CONF_BASE_URL]
+    )
     await hass.async_add_executor_job(client.with_options(timeout=10.0).models.list)
 
 
 class NovaConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         if user_input is None:
-            return self.async_show_form(step_id="user", data_schema=STEP_USER_DATA_SCHEMA)
+            return self.async_show_form(
+                step_id="user", data_schema=STEP_USER_DATA_SCHEMA
+            )
 
         errors: dict[str, str] = {}
         try:
@@ -94,7 +100,9 @@ class NovaConfigFlow(ConfigFlow, domain=DOMAIN):
                 options=RECOMMENDED_OPTIONS,
             )
 
-        return self.async_show_form(step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors)
+        return self.async_show_form(
+            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
+        )
 
     @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
@@ -103,24 +111,39 @@ class NovaConfigFlow(ConfigFlow, domain=DOMAIN):
 
 class NovaOptionsFlow(OptionsFlow):
     def __init__(self, config_entry: ConfigEntry) -> None:
-        self.last_rendered_recommended = config_entry.options.get(CONF_RECOMMENDED, False)
+        self.last_rendered_recommended = config_entry.options.get(
+            CONF_RECOMMENDED, False
+        )
         self.available_models: list[str] = []
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         options: dict[str, Any] | MappingProxyType[str, Any] = self.config_entry.options
 
         # Fetch models dynamically from OpenRouter/Base URL
         if not self.available_models:
             client = get_async_client(self.hass)
             try:
-                base_url = self.config_entry.data.get(CONF_BASE_URL, RECOMMENDED_BASE_URL).rstrip("/")
+                base_url = self.config_entry.data.get(
+                    CONF_BASE_URL, RECOMMENDED_BASE_URL
+                ).rstrip("/")
                 api_key = self.config_entry.data.get(CONF_API_KEY, "")
-                response = await client.get(f"{base_url}/models", headers={"Authorization": f"Bearer {api_key}"}, timeout=5.0)
+                response = await client.get(
+                    f"{base_url}/models",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    timeout=5.0,
+                )
                 if response.status_code == 200:
                     data = response.json()
-                    self.available_models = sorted([model["id"] for model in data.get("data", [])])
+                    self.available_models = sorted(
+                        [model["id"] for model in data.get("data", [])]
+                    )
             except httpx.RequestError as err:
-                _LOGGER.warning("Could not fetch models dynamically, falling back to text input: %s", err)
+                _LOGGER.warning(
+                    "Could not fetch models dynamically, falling back to text input: %s",
+                    err,
+                )
 
         if user_input is not None:
             if user_input[CONF_RECOMMENDED] == self.last_rendered_recommended:
@@ -140,13 +163,22 @@ class NovaOptionsFlow(OptionsFlow):
         return self.async_show_form(step_id="init", data_schema=vol.Schema(schema))
 
     def nova_config_option_schema(self, options: dict[str, Any]) -> VolDictType:
-        hass_apis: list[SelectOptionDict] = [SelectOptionDict(label="No control", value="none")]
-        hass_apis.extend(SelectOptionDict(label=api.name, value=api.id) for api in llm.async_get_apis(self.hass))
+        hass_apis: list[SelectOptionDict] = [
+            SelectOptionDict(label="No control", value="none")
+        ]
+        hass_apis.extend(
+            SelectOptionDict(label=api.name, value=api.id)
+            for api in llm.async_get_apis(self.hass)
+        )
 
         schema: VolDictType = {
             vol.Optional(
                 CONF_PROMPT,
-                description={"suggested_value": options.get(CONF_PROMPT, llm.DEFAULT_INSTRUCTIONS_PROMPT)},
+                description={
+                    "suggested_value": options.get(
+                        CONF_PROMPT, llm.DEFAULT_INSTRUCTIONS_PROMPT
+                    )
+                },
             ): TemplateSelector(),
             vol.Optional(
                 CONF_LLM_HASS_API,
@@ -158,16 +190,22 @@ class NovaOptionsFlow(OptionsFlow):
                 description={"suggested_value": options.get(CONF_ENABLE_TOOLS, True)},
                 default=True,
             ): BooleanSelector(),
-            vol.Required(CONF_RECOMMENDED, default=options.get(CONF_RECOMMENDED, False)): bool,
+            vol.Required(
+                CONF_RECOMMENDED, default=options.get(CONF_RECOMMENDED, False)
+            ): bool,
         }
 
         if options.get(CONF_RECOMMENDED):
             return schema
 
-        # If we successfully fetched models, create a beautiful searchable dropdown. 
+        # If we successfully fetched models, create a beautiful searchable dropdown.
         # Otherwise, fall back to a standard text string input.
         if self.available_models:
-            model_selector = SelectSelector(SelectSelectorConfig(options=self.available_models, mode="dropdown", custom_value=True))
+            model_selector = SelectSelector(
+                SelectSelectorConfig(
+                    options=self.available_models, mode="dropdown", custom_value=True
+                )
+            )
         else:
             model_selector = str
 

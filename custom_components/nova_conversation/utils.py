@@ -29,10 +29,10 @@ def format_ha_tool_for_openai(
         name=tool.name,
         parameters=convert(tool.parameters, custom_serializer=custom_serializer),
     )
-    
+
     if tool.description:
         function_definition["description"] = tool.description
-        
+
     return ChatCompletionToolParam(type="function", function=function_definition)
 
 
@@ -57,7 +57,7 @@ def convert_ha_content_to_openai_message(
         )
 
     assert type(content) is conversation.AssistantContent
-    
+
     # Map Home Assistant tool calls to OpenAI's expected structure
     formatted_tool_calls = [
         ChatCompletionMessageToolCallParam(
