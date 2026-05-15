@@ -9,7 +9,7 @@ Huge thanks to [Michelle Avery](https://github.com/michelle-avery) for the origi
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.5+-blue.svg)](https://www.home-assistant.io/)
 [![Code Checker](https://github.com/DonTranQuiL/nova-conversation/actions/workflows/codechecker.yml/badge.svg)](https://github.com/DonTranQuiL/nova-conversation/actions)
 [![HACS Validation](https://github.com/DonTranQuiL/nova-conversation/actions/workflows/hacs.yaml/badge.svg)](https://github.com/DonTranQuiL/nova-conversation/actions)
-[![GitHub Release](https://img.shields.io/github/v/release/DonTranQuiL/nova_conversation?style=flat-square)](https://github.com/DonTranQuiL/nova-conversation/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/DonTranQuiL/nova-conversation?style=flat-square)](https://github.com/DonTranQuiL/nova-conversation/releases)
 
 Bring the power of advanced Language Models to Home Assistant. This integration doesn't just chat—it physically controls your smart home and streams responses in real-time. Because it uses the universal OpenAI API standard, you can point this at **OpenRouter, LM Studio, LocalAI, Groq, Ollama**, or any compatible endpoint.
 
