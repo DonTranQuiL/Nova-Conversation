@@ -10,14 +10,14 @@ from custom_components.nova_conversation import (
 from custom_components.nova_conversation.const import (
     DOMAIN,
     CONF_BASE_URL,
-    SERVICE_GENERATE_IMAGE,
 )
 
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.config_entries import ConfigEntryNotReady
 
 
 # ===================== FIXTURES =====================
+
 
 @pytest.fixture
 def hass():
@@ -44,6 +44,7 @@ def entry():
 
 
 # ===================== SETUP ENTRY =====================
+
 
 @pytest.mark.asyncio
 async def test_setup_entry_success(hass, entry):
@@ -112,6 +113,7 @@ async def test_setup_entry_not_ready(hass, entry):
 
 # ===================== SERVICE TESTS =====================
 
+
 @pytest.mark.asyncio
 async def test_async_setup_registers_service(hass):
     hass.services.async_register = MagicMock()
@@ -133,6 +135,7 @@ async def test_unload_entry(hass, entry):
 
 # ===================== IMAGE GENERATION =====================
 
+
 @pytest.mark.asyncio
 async def test_generate_image_generic_error(hass, entry):
     await async_setup(hass, {})
@@ -152,10 +155,14 @@ async def test_generate_image_generic_error(hass, entry):
     entry.runtime_data = client
 
     with pytest.raises(HomeAssistantError):
-        await handler(MagicMock(data={
-            "config_entry": "test_entry_id",
-            "prompt": "test",
-            "size": "1024x1024",
-            "quality": "standard",
-            "style": "vivid",
-        }))
+        await handler(
+            MagicMock(
+                data={
+                    "config_entry": "test_entry_id",
+                    "prompt": "test",
+                    "size": "1024x1024",
+                    "quality": "standard",
+                    "style": "vivid",
+                }
+            )
+        )
