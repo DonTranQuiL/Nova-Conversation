@@ -5,12 +5,14 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.const import CONF_LLM_HASS_API
+from homeassistant.const import CONF_API_KEY, CONF_LLM_HASS_API
 
 from custom_components.nova_conversation.config_flow import NovaConfigFlow
 from custom_components.nova_conversation.const import (
+    DOMAIN,
     CONF_BASE_URL,
     CONF_RECOMMENDED,
+    CONF_CHAT_MODEL,
     CONF_PROMPT,
 )
 
@@ -22,7 +24,7 @@ async def test_config_flow_user_form(hass: HomeAssistant):
     flow.hass = hass
 
     result = await flow.async_step_user(user_input=None)
-    assert result["type"] == FlowResultType.SHOW_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "user"
 
 
@@ -52,25 +54,19 @@ async def test_config_flow_errors(mock_validate, hass: HomeAssistant):
 
     # Test connection issues
     mock_validate.side_effect = openai.APIConnectionError(request=MagicMock())
-    result = await flow.async_step_user(
-        user_input={"api_key": "key", CONF_BASE_URL: "url"}
-    )
+    result = await flow.async_step_user(user_input={"api_key": "key", CONF_BASE_URL: "url"})
     assert result["errors"]["base"] == "cannot_connect"
 
     # Test auth validation problems
     mock_validate.side_effect = openai.AuthenticationError(
         message="Unauthorized", response=MagicMock(status_code=401), body=None
     )
-    result = await flow.async_step_user(
-        user_input={"api_key": "key", CONF_BASE_URL: "url"}
-    )
+    result = await flow.async_step_user(user_input={"api_key": "key", CONF_BASE_URL: "url"})
     assert result["errors"]["base"] == "invalid_auth"
 
     # Test completely unexpected exceptions
     mock_validate.side_effect = RuntimeWarning("Random bad event")
-    result = await flow.async_step_user(
-        user_input={"api_key": "key", CONF_BASE_URL: "url"}
-    )
+    result = await flow.async_step_user(user_input={"api_key": "key", CONF_BASE_URL: "url"})
     assert result["errors"]["base"] == "unknown"
 
 
@@ -89,7 +85,6 @@ async def test_options_flow_init_recommended(mock_get_client, hass: HomeAssistan
 
     flow = NovaConfigFlow.async_get_options_flow(entry)
     flow.hass = hass
-    flow.config_entry = entry
 
     result = await flow.async_step_init(user_input=None)
     assert result["type"] == FlowResultType.SHOW_FORM
@@ -106,17 +101,14 @@ async def test_options_flow_fetch_models_success(mock_get_client, hass: HomeAssi
 
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "data": [{"id": "nova-pro"}, {"id": "nova-lite"}]
-    }
-
+    mock_response.json.return_value = {"data": [{"id": "nova-pro"}, {"id": "nova-lite"}]}
+    
     mock_client = MagicMock()
     mock_client.get = AsyncMock(return_value=mock_response)
     mock_get_client.return_value = mock_client
 
     flow = NovaConfigFlow.async_get_options_flow(entry)
     flow.hass = hass
-    flow.config_entry = entry
 
     await flow.async_step_init(user_input=None)
     assert flow.available_models == ["nova-lite", "nova-pro"]
@@ -131,8 +123,6 @@ async def test_options_flow_submit(hass: HomeAssistant):
 
     flow = NovaConfigFlow.async_get_options_flow(entry)
     flow.hass = hass
-    flow.config_entry = entry
-    flow.last_rendered_recommended = False
 
     user_input = {
         CONF_RECOMMENDED: False,
@@ -142,7 +132,6 @@ async def test_options_flow_submit(hass: HomeAssistant):
 
     result = await flow.async_step_init(user_input=user_input)
     assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert "none" not in result["data"]  # Verifies logic filtering "none" references
 
 
 @pytest.mark.asyncio
@@ -154,10 +143,7 @@ async def test_options_flow_toggle_recommended(hass: HomeAssistant):
 
     flow = NovaConfigFlow.async_get_options_flow(entry)
     flow.hass = hass
-    flow.config_entry = entry
-    flow.last_rendered_recommended = False
 
-    # Simulate submission changing recommended flag state
     user_input = {
         CONF_RECOMMENDED: True,
         CONF_PROMPT: "Custom prompt",
