@@ -12,12 +12,11 @@ from custom_components.nova_conversation.const import (
     CONF_BASE_URL,
 )
 
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.config_entries import ConfigEntryNotReady
 
 
 # ===================== FIXTURES =====================
-
 
 @pytest.fixture
 def hass():
@@ -44,7 +43,6 @@ def entry():
 
 
 # ===================== SETUP ENTRY =====================
-
 
 @pytest.mark.asyncio
 async def test_setup_entry_success(hass, entry):
@@ -111,8 +109,7 @@ async def test_setup_entry_not_ready(hass, entry):
             await async_setup_entry(hass, entry)
 
 
-# ===================== SERVICE TESTS =====================
-
+# ===================== SERVICE TEST =====================
 
 @pytest.mark.asyncio
 async def test_async_setup_registers_service(hass):
@@ -122,6 +119,8 @@ async def test_async_setup_registers_service(hass):
 
     hass.services.async_register.assert_called_once()
 
+
+# ===================== UNLOAD =====================
 
 @pytest.mark.asyncio
 async def test_unload_entry(hass, entry):
@@ -133,36 +132,32 @@ async def test_unload_entry(hass, entry):
     hass.config_entries.async_unload_platforms.assert_called_once()
 
 
-# ===================== IMAGE GENERATION =====================
-
+# ===================== IMAGE ERROR PATH =====================
 
 @pytest.mark.asyncio
 async def test_generate_image_generic_error(hass, entry):
     await async_setup(hass, {})
+
     handler = hass.services.async_register.call_args[0][2]
 
     hass.config_entries.async_get_entry = MagicMock(return_value=entry)
 
-    class FakeOpenAIError(Exception):
+    class FakeError(Exception):
         pass
 
     client = MagicMock()
 
     async def fail(*args, **kwargs):
-        raise FakeOpenAIError("boom")
+        raise FakeError("boom")
 
     client.images.generate = AsyncMock(side_effect=fail)
     entry.runtime_data = client
 
     with pytest.raises(HomeAssistantError):
-        await handler(
-            MagicMock(
-                data={
-                    "config_entry": "test_entry_id",
-                    "prompt": "test",
-                    "size": "1024x1024",
-                    "quality": "standard",
-                    "style": "vivid",
-                }
-            )
-        )
+        await handler(MagicMock(data={
+            "config_entry": "test_entry_id",
+            "prompt": "test",
+            "size": "1024x1024",
+            "quality": "standard",
+            "style": "vivid",
+        }))
