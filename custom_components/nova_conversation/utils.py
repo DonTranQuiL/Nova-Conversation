@@ -43,7 +43,6 @@ def convert_ha_content_to_openai_message(
     Convert Home Assistant's native chat log content into the OpenAI API message format.
     """
     if content.role == "tool_result":
-        assert type(content) is conversation.ToolResultContent
         return ChatCompletionToolMessageParam(
             role="tool",
             tool_call_id=content.tool_call_id,
@@ -55,8 +54,6 @@ def convert_ha_content_to_openai_message(
             ChatCompletionMessageParam,
             {"role": content.role, "content": content.content},
         )
-
-    assert type(content) is conversation.AssistantContent
 
     # Map Home Assistant tool calls to OpenAI's expected structure
     formatted_tool_calls = [
