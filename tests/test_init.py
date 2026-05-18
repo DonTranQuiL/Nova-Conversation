@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from custom_components.nova_conversation import async_setup_entry
 from custom_components.nova_conversation.const import CONF_BASE_URL
 
+
 @pytest.mark.asyncio
 async def test_setup_entry_auth_error():
     entry = MagicMock()
@@ -20,9 +21,7 @@ async def test_setup_entry_auth_error():
     async def fake_list(*args, **kwargs):
         # Raise an actual OpenAI authentication error instead of a generic Exception
         raise openai.AuthenticationError(
-            message="unauthorized", 
-            response=MagicMock(), 
-            body=None
+            message="unauthorized", response=MagicMock(), body=None
         )
 
     fake_models = MagicMock()
