@@ -14,6 +14,7 @@ from custom_components.nova_conversation.const import DOMAIN, CONF_BASE_URL
 # FIXTURES
 # =========================
 
+
 @pytest.fixture
 def hass():
     """Lightweight HA mock that still executes real integration logic."""
@@ -40,6 +41,7 @@ def entry():
 # =========================
 # SETUP ENTRY
 # =========================
+
 
 @pytest.mark.asyncio
 async def test_setup_entry_success(hass, entry):
@@ -96,6 +98,7 @@ async def test_setup_entry_not_ready(hass, entry):
 # =========================
 # GLOBAL SETUP + SERVICE
 # =========================
+
 
 @pytest.mark.asyncio
 async def test_async_setup_registers_service(hass):
@@ -217,6 +220,7 @@ async def test_generate_image_generic_error(hass, entry):
 # =========================
 # UNLOAD
 # =========================
+
 
 @pytest.mark.asyncio
 async def test_unload_entry(hass, entry):
