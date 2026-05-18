@@ -24,9 +24,10 @@ async def test_setup_entry_auth_error():
     async def fake_list(*args, **kwargs):
         raise Exception("unauthorized")
 
-    with patch("openai.AsyncOpenAI", return_value=client), \
-         patch.object(client.with_options.return_value.models, "list", new=fake_list):
-
+    with (
+        patch("openai.AsyncOpenAI", return_value=client),
+        patch.object(client.with_options.return_value.models, "list", new=fake_list),
+    ):
         result = await async_setup_entry(hass, entry)
 
     assert result is False
