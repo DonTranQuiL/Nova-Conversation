@@ -32,8 +32,12 @@ Huge thanks to [Michelle Avery](https://github.com/michelle-avery) for the origi
     <img src="https://img.shields.io/badge/code%20style-ruff-000000?style=for-the-badge" alt="Ruff">
   </a>
   <a href="https://codecov.io/gh/DonTranQuiL/Nova-Conversation">
-    <img src="https://img.shields.io/codecov/c/github/DonTranQuiL/Nova-Conversation?style=for-the-badge&color=5dbb0f&label=coverage" alt="Coverage">
-  </a>
+  <img 
+    src="https://codecov.io/gh/DonTranQuiL/Nova-Conversation/branch/main/graph/badge.svg"
+    alt="Coverage"
+    style="height:28px;"
+  >
+</a>
 
   <!-- Ecosystem -->
   <a href="https://hacs.xyz/">
