@@ -2,15 +2,20 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
+from homeassistant.exceptions import ConfigEntryNotReady
 
-from custom_components.nova_conversation import async_setup, async_setup_entry, async_unload_entry
+from custom_components.nova_conversation import (
+    async_setup,
+    async_setup_entry,
+    async_unload_entry,
+)
 from custom_components.nova_conversation.const import DOMAIN, CONF_BASE_URL
 
 
 # -----------------------------
 # async_setup SERVICE TESTS
 # -----------------------------
+
 
 @pytest.mark.asyncio
 async def test_generate_image_success(hass: HomeAssistant):
@@ -22,9 +27,11 @@ async def test_generate_image_success(hass: HomeAssistant):
     hass.config_entries.async_get_entry.return_value = entry
 
     client = MagicMock()
-    client.images.generate = AsyncMock(return_value=MagicMock(
-        data=[MagicMock(model_dump=lambda exclude: {"ok": True})]
-    ))
+    client.images.generate = AsyncMock(
+        return_value=MagicMock(
+            data=[MagicMock(model_dump=lambda exclude: {"ok": True})]
+        )
+    )
 
     entry.runtime_data = client
 
@@ -65,6 +72,7 @@ async def test_generate_image_invalid_entry(hass: HomeAssistant):
 # -----------------------------
 # async_setup_entry TESTS
 # -----------------------------
+
 
 @pytest.mark.asyncio
 async def test_setup_entry_success():
@@ -134,6 +142,7 @@ async def test_setup_entry_not_ready():
 # -----------------------------
 # unload
 # -----------------------------
+
 
 @pytest.mark.asyncio
 async def test_unload_entry():
