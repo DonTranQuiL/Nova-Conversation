@@ -8,7 +8,6 @@ from homeassistant.exceptions import (
     ServiceValidationError,
     ConfigEntryNotReady,
 )
-from homeassistant.const import CONF_API_KEY
 from homeassistant.config_entries import ConfigEntry
 
 from custom_components.nova_conversation import (
@@ -172,12 +171,16 @@ async def test_async_setup_entry_platform_header_exception(mock_openai, hass, en
     """Test setup tolerates local providers missing platform headers."""
     mock_client = MagicMock()
     # Simulate a crash when trying to read property
-    type(mock_client).platform_headers = pytest.fail  # Should be caught by your try/except block
+    type(
+        mock_client
+    ).platform_headers = pytest.fail  # Should be caught by your try/except block
     mock_client.with_options().models.list = AsyncMock()
     mock_openai.return_value = mock_client
 
     # Force the executor job executor to raise an Exception
-    hass.async_add_executor_job = AsyncMock(side_effect=Exception("Platform headers not supported"))
+    hass.async_add_executor_job = AsyncMock(
+        side_effect=Exception("Platform headers not supported")
+    )
     hass.config_entries.async_forward_entry_setups = AsyncMock(return_value=True)
 
     # Should still succeed because the error is safely caught and ignored
