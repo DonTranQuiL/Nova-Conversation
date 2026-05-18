@@ -13,6 +13,7 @@ from custom_components.nova_conversation.const import DOMAIN, CONF_BASE_URL
 # SERVICE REGISTRATION TEST
 # -------------------------
 
+
 @pytest.mark.asyncio
 async def test_generate_image_success(hass):
     hass.config_entries = MagicMock()
@@ -33,9 +34,7 @@ async def test_generate_image_success(hass):
     }
 
     fake_response = MagicMock()
-    fake_response.data = [
-        MagicMock(model_dump=lambda exclude: {"ok": True})
-    ]
+    fake_response.data = [MagicMock(model_dump=lambda exclude: {"ok": True})]
 
     client = MagicMock()
     client.images.generate = AsyncMock(return_value=fake_response)
@@ -69,6 +68,7 @@ async def test_generate_image_success(hass):
 # INVALID ENTRY PATH
 # -------------------------
 
+
 @pytest.mark.asyncio
 async def test_generate_image_invalid_entry(hass):
     hass.config_entries = MagicMock()
@@ -95,6 +95,7 @@ async def test_generate_image_invalid_entry(hass):
 # SETUP ENTRY SUCCESS
 # -------------------------
 
+
 @pytest.mark.asyncio
 async def test_setup_entry_success():
     entry = MagicMock()
@@ -120,6 +121,7 @@ async def test_setup_entry_success():
 # -------------------------
 # AUTH ERROR PATH
 # -------------------------
+
 
 @pytest.mark.asyncio
 async def test_setup_entry_auth_error():
@@ -150,6 +152,7 @@ async def test_setup_entry_auth_error():
 # NOT READY PATH
 # -------------------------
 
+
 @pytest.mark.asyncio
 async def test_setup_entry_not_ready():
     import openai
@@ -177,6 +180,7 @@ async def test_setup_entry_not_ready():
 # -------------------------
 # UNLOAD
 # -------------------------
+
 
 @pytest.mark.asyncio
 async def test_unload_entry():
