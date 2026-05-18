@@ -4,7 +4,8 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from homeassistant.components import conversation
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import llm
+from homeassistant.helpers import intent, llm, chat_session
+from homeassistant.const import CONF_LLM_HASS_API
 
 from custom_components.nova_conversation.conversation import (
     async_setup_entry,
@@ -34,7 +35,7 @@ async def test_entity_properties_and_features():
     mock_entry = MagicMock()
     mock_entry.entry_id = "test_id"
     mock_entry.title = "Nova Entity"
-    mock_entry.options = {llm.CONF_LLM_HASS_API: "llm_assist_api"}
+    mock_entry.options = {CONF_LLM_HASS_API: "llm_assist_api"}
 
     entity = NovaConversationEntity(mock_entry)
     assert entity.supported_languages == "*"
@@ -42,24 +43,17 @@ async def test_entity_properties_and_features():
 
 
 @pytest.mark.asyncio
-@patch(
-    "custom_components.nova_conversation.conversation.chat_session.async_get_chat_session"
-)
-@patch(
-    "custom_components.nova_conversation.conversation.conversation.async_get_chat_log"
-)
-async def test_async_process_text_stream_success(
-    mock_get_chat_log, mock_get_session, hass: HomeAssistant
-):
+@patch("custom_components.nova_conversation.conversation.chat_session.async_get_chat_session")
+@patch("custom_components.nova_conversation.conversation.conversation.async_get_chat_log")
+async def test_async_process_text_stream_success(mock_get_chat_log, mock_get_session, hass: HomeAssistant):
     """Test full pipeline processing handling incoming natural language generation tokens."""
     mock_entry = MagicMock()
     mock_entry.entry_id = "entry_123"
-    mock_entry.options = {llm.CONF_LLM_HASS_API: "assist", "prompt": "Test Prompt"}
-
-    # Mock runtime OpenAI async client responses
+    mock_entry.options = {CONF_LLM_HASS_API: "assist", "prompt": "Test Prompt"}
+    
     mock_chunk = MagicMock()
     mock_chunk.choices = [MagicMock(delta=MagicMock(content="Hello human!"))]
-
+    
     async def mock_stream_iter():
         yield mock_chunk
 
@@ -70,23 +64,18 @@ async def test_async_process_text_stream_success(
     entity = NovaConversationEntity(mock_entry)
     entity.hass = hass
 
-    # Setup core context tracking blocks
     mock_log = MagicMock()
     mock_log.conversation_id = "session_id"
     mock_log.continue_conversation = True
     mock_log.content = []
-
+    
     async def mock_add_delta_stream(agent_id, generator):
-        # Consume the generator to run its inner streaming logic
         async for delta in generator:
             pass
         return []
 
-    mock_log.async_add_delta_content_stream = AsyncMock(
-        side_effect=mock_add_delta_stream
-    )
-
-    # Context managers
+    mock_log.async_add_delta_content_stream = AsyncMock(side_effect=mock_add_delta_stream)
+    
     mock_get_session.return_value.__enter__.return_value = MagicMock()
     mock_get_chat_log.return_value.__enter__.return_value = mock_log
 
@@ -96,6 +85,8 @@ async def test_async_process_text_stream_success(
         conversation_id="session_id",
         language="en",
         agent_id="agent_nova",
+        device_id=None,
+        satellite_id=None,
     )
 
     result = await entity.async_process(user_input)
@@ -104,38 +95,27 @@ async def test_async_process_text_stream_success(
 
 
 @pytest.mark.asyncio
-@patch(
-    "custom_components.nova_conversation.conversation.chat_session.async_get_chat_session"
-)
-@patch(
-    "custom_components.nova_conversation.conversation.conversation.async_get_chat_log"
-)
-async def test_async_process_tool_call(
-    mock_get_chat_log, mock_get_session, hass: HomeAssistant
-):
+@patch("custom_components.nova_conversation.conversation.chat_session.async_get_chat_session")
+@patch("custom_components.nova_conversation.conversation.conversation.async_get_chat_log")
+async def test_async_process_tool_call(mock_get_chat_log, mock_get_session, hass: HomeAssistant):
     """Test handling incoming tool execution chunk structures safely."""
     mock_entry = MagicMock()
     mock_entry.entry_id = "entry_123"
-    mock_entry.options = {llm.CONF_LLM_HASS_API: "assist"}
-
-    # Send a fragment containing tool calls
+    mock_entry.options = {CONF_LLM_HASS_API: "assist"}
+    
     mock_tc = MagicMock()
     mock_tc.index = 0
     mock_tc.id = "call_xyz"
     mock_tc.function.name = "turn_on_light"
     mock_tc.function.arguments = '{"entity_id":'
-
+    
     mock_tc_append = MagicMock()
     mock_tc_append.index = 0
     mock_tc_append.id = "call_xyz"
     mock_tc_append.function = MagicMock(arguments='"light.kitchen"}')
 
-    chunk_1 = MagicMock(
-        choices=[MagicMock(delta=MagicMock(content=None, tool_calls=[mock_tc]))]
-    )
-    chunk_2 = MagicMock(
-        choices=[MagicMock(delta=MagicMock(content=None, tool_calls=[mock_tc_append]))]
-    )
+    chunk_1 = MagicMock(choices=[MagicMock(delta=MagicMock(content=None, tool_calls=[mock_tc]))])
+    chunk_2 = MagicMock(choices=[MagicMock(delta=MagicMock(content=None, tool_calls=[mock_tc_append]))])
 
     async def mock_stream_iter():
         yield chunk_1
@@ -152,7 +132,7 @@ async def test_async_process_tool_call(
     mock_log.conversation_id = "session_id"
     mock_log.content = []
     mock_log.unresponded_tool_results = False
-
+    
     mock_log.async_add_delta_content_stream = AsyncMock(return_value=[])
 
     mock_get_session.return_value.__enter__.return_value = MagicMock()
@@ -164,6 +144,8 @@ async def test_async_process_tool_call(
         conversation_id="session_id",
         language="en",
         agent_id="agent_nova",
+        device_id=None,
+        satellite_id=None,
     )
 
     await entity.async_process(user_input)
@@ -171,20 +153,14 @@ async def test_async_process_tool_call(
 
 
 @pytest.mark.asyncio
-@patch(
-    "custom_components.nova_conversation.conversation.chat_session.async_get_chat_session"
-)
-@patch(
-    "custom_components.nova_conversation.conversation.conversation.async_get_chat_log"
-)
-async def test_async_process_errors(
-    mock_get_chat_log, mock_get_session, hass: HomeAssistant
-):
+@patch("custom_components.nova_conversation.conversation.chat_session.async_get_chat_session")
+@patch("custom_components.nova_conversation.conversation.conversation.async_get_chat_log")
+async def test_async_process_errors(mock_get_chat_log, mock_get_session, hass: HomeAssistant):
     """Test full coverage error handling strategies for provider-side faults."""
     mock_entry = MagicMock()
     mock_entry.entry_id = "entry_123"
     mock_entry.options = {}
-
+    
     mock_client = MagicMock()
     mock_entry.runtime_data = mock_client
 
@@ -202,20 +178,16 @@ async def test_async_process_errors(
         conversation_id="session_id",
         language="en",
         agent_id="agent_nova",
+        device_id=None,
+        satellite_id=None,
     )
 
-    # 1. Test Rate Limits
     mock_client.chat.completions.create = AsyncMock(
-        side_effect=openai.RateLimitError(
-            message="Limited", response=MagicMock(status_code=429), body=None
-        )
+        side_effect=openai.RateLimitError(message="Limited", response=MagicMock(status_code=429), body=None)
     )
     with pytest.raises(HomeAssistantError, match="API quota exceeded"):
         await entity.async_process(user_input)
 
-    # 2. Test Generic connection failures
-    mock_client.chat.completions.create = AsyncMock(
-        side_effect=openai.OpenAIError("Connection reset")
-    )
+    mock_client.chat.completions.create = AsyncMock(side_effect=openai.OpenAIError("Connection reset"))
     with pytest.raises(HomeAssistantError, match="Connection to provider failed"):
         await entity.async_process(user_input)
