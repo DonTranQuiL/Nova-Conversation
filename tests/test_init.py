@@ -36,6 +36,7 @@ def entry():
 # SETUP ENTRY
 # =========================
 
+
 @pytest.mark.asyncio
 async def test_setup_entry_success(hass, entry):
     client = MagicMock()
@@ -92,6 +93,7 @@ async def test_setup_entry_not_ready(hass, entry):
 # SERVICE SETUP
 # =========================
 
+
 @pytest.mark.asyncio
 async def test_async_setup_registers_service(hass):
     await async_setup(hass, {})
@@ -101,6 +103,7 @@ async def test_async_setup_registers_service(hass):
 # =========================
 # IMAGE GENERATION
 # =========================
+
 
 @pytest.mark.asyncio
 async def test_generate_image_success(hass, entry):
@@ -178,6 +181,7 @@ async def test_generate_image_rate_limit(hass, entry):
 
 # ✅ FIXED TEST (THIS WAS YOUR FAILURE)
 
+
 @pytest.mark.asyncio
 async def test_generate_image_generic_error(hass, entry):
     await async_setup(hass, {})
@@ -208,6 +212,7 @@ async def test_generate_image_generic_error(hass, entry):
 # =========================
 # UNLOAD
 # =========================
+
 
 @pytest.mark.asyncio
 async def test_unload_entry(hass, entry):
