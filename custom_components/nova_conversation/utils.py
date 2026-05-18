@@ -4,7 +4,6 @@ import json
 from collections.abc import Callable
 from typing import Any, cast
 
-from homeassistant.components import conversation
 from homeassistant.helpers import llm
 
 from openai.types.chat import (
