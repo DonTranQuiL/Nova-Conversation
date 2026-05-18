@@ -16,18 +16,22 @@ async def test_setup_entry_auth_error():
     hass = MagicMock()
     hass.async_add_executor_job = AsyncMock(return_value=True)
 
-    # create client normally
-    client = MagicMock()
-    client.platform_headers = True
-
-    # IMPORTANT: patch the FINAL async call directly
+    # fake models.list that will actually be used
     async def fake_list(*args, **kwargs):
         raise Exception("unauthorized")
 
-    with (
-        patch("openai.AsyncOpenAI", return_value=client),
-        patch.object(client.with_options.return_value.models, "list", new=fake_list),
-    ):
+    fake_models = MagicMock()
+    fake_models.list = fake_list
+
+    fake_client_chain = MagicMock()
+    fake_client_chain.models = fake_models
+
+    # IMPORTANT: with_options must return our controlled chain
+    client = MagicMock()
+    client.platform_headers = True
+    client.with_options.return_value = fake_client_chain
+
+    with patch("openai.AsyncOpenAI", return_value=client):
         result = await async_setup_entry(hass, entry)
 
     assert result is False
