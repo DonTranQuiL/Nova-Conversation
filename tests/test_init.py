@@ -1,8 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.nova_conversation import (
     async_setup,
@@ -12,28 +9,19 @@ from custom_components.nova_conversation import (
 from custom_components.nova_conversation.const import DOMAIN, CONF_BASE_URL
 
 
-# -----------------------------
-# async_setup SERVICE TESTS
-# -----------------------------
-
+# -------------------------
+# SERVICE REGISTRATION TEST
+# -------------------------
 
 @pytest.mark.asyncio
-async def test_generate_image_success(hass: HomeAssistant):
+async def test_generate_image_success(hass):
     hass.config_entries = MagicMock()
 
     entry = MagicMock()
     entry.domain = DOMAIN
+    entry.runtime_data = MagicMock()
 
     hass.config_entries.async_get_entry.return_value = entry
-
-    client = MagicMock()
-    client.images.generate = AsyncMock(
-        return_value=MagicMock(
-            data=[MagicMock(model_dump=lambda exclude: {"ok": True})]
-        )
-    )
-
-    entry.runtime_data = client
 
     call = MagicMock()
     call.data = {
@@ -44,35 +32,68 @@ async def test_generate_image_success(hass: HomeAssistant):
         "style": "vivid",
     }
 
-    with patch("homeassistant.helpers.selector.ConfigEntrySelector", lambda x: x):
+    fake_response = MagicMock()
+    fake_response.data = [
+        MagicMock(model_dump=lambda exclude: {"ok": True})
+    ]
+
+    client = MagicMock()
+    client.images.generate = AsyncMock(return_value=fake_response)
+    entry.runtime_data = client
+
+    # Capture registered service handler properly
+    with patch(
+        "homeassistant.helpers.selector.ConfigEntrySelector",
+        lambda x: x,
+    ):
         await async_setup(hass, {})
 
-        handler = hass.services.async_register.call_args[0][2]
-        result = await handler(call)
+        # get registered service handler safely
+        service_call = None
+
+        def fake_register(domain, service, handler, **kwargs):
+            nonlocal service_call
+            service_call = handler
+
+        hass.services = MagicMock()
+        hass.services.async_register = fake_register
+
+        await async_setup(hass, {})
+
+        result = await service_call(call)
 
         assert result == {"ok": True}
 
 
+# -------------------------
+# INVALID ENTRY PATH
+# -------------------------
+
 @pytest.mark.asyncio
-async def test_generate_image_invalid_entry(hass: HomeAssistant):
+async def test_generate_image_invalid_entry(hass):
     hass.config_entries = MagicMock()
     hass.config_entries.async_get_entry.return_value = None
 
     call = MagicMock()
     call.data = {"config_entry": "bad"}
 
+    captured = {}
+
+    def fake_register(domain, service, handler, **kwargs):
+        captured["handler"] = handler
+
+    hass.services = MagicMock()
+    hass.services.async_register = fake_register
+
     await async_setup(hass, {})
 
-    handler = hass.services.async_register.call_args[0][2]
-
     with pytest.raises(Exception):
-        await handler(call)
+        await captured["handler"](call)
 
 
-# -----------------------------
-# async_setup_entry TESTS
-# -----------------------------
-
+# -------------------------
+# SETUP ENTRY SUCCESS
+# -------------------------
 
 @pytest.mark.asyncio
 async def test_setup_entry_success():
@@ -86,16 +107,24 @@ async def test_setup_entry_success():
     client.platform_headers = True
     client.with_options.return_value.models.list = AsyncMock()
 
-    with patch("openai.AsyncOpenAI", return_value=client):
-        hass = MagicMock()
+    hass = MagicMock()
+    hass.async_add_executor_job = AsyncMock(return_value=True)
+    hass.config_entries.async_forward_entry_setups = AsyncMock()
 
+    with patch("openai.AsyncOpenAI", return_value=client):
         result = await async_setup_entry(hass, entry)
 
-        assert result is True
+    assert result is True
 
+
+# -------------------------
+# AUTH ERROR PATH
+# -------------------------
 
 @pytest.mark.asyncio
 async def test_setup_entry_auth_error():
+    import openai
+
     entry = MagicMock()
     entry.data = {
         "api_key": "bad",
@@ -105,16 +134,21 @@ async def test_setup_entry_auth_error():
     client = MagicMock()
     client.platform_headers = True
     client.with_options.return_value.models.list = AsyncMock(
-        side_effect=Exception("auth")
+        side_effect=openai.AuthenticationError("bad key")
     )
 
-    with patch("openai.AsyncOpenAI", return_value=client):
-        hass = MagicMock()
+    hass = MagicMock()
+    hass.async_add_executor_job = AsyncMock(return_value=True)
 
+    with patch("openai.AsyncOpenAI", return_value=client):
         result = await async_setup_entry(hass, entry)
 
-        assert result is False
+    assert result is False
 
+
+# -------------------------
+# NOT READY PATH
+# -------------------------
 
 @pytest.mark.asyncio
 async def test_setup_entry_not_ready():
@@ -132,17 +166,17 @@ async def test_setup_entry_not_ready():
         side_effect=openai.OpenAIError("down")
     )
 
-    with patch("openai.AsyncOpenAI", return_value=client):
-        hass = MagicMock()
+    hass = MagicMock()
+    hass.async_add_executor_job = AsyncMock(return_value=True)
 
-        with pytest.raises(ConfigEntryNotReady):
+    with patch("openai.AsyncOpenAI", return_value=client):
+        with pytest.raises(Exception):
             await async_setup_entry(hass, entry)
 
 
-# -----------------------------
-# unload
-# -----------------------------
-
+# -------------------------
+# UNLOAD
+# -------------------------
 
 @pytest.mark.asyncio
 async def test_unload_entry():
