@@ -1,5 +1,4 @@
 import json
-import pytest
 from unittest.mock import MagicMock
 from homeassistant.components import conversation
 from homeassistant.helpers import llm
@@ -43,7 +42,7 @@ def test_convert_ha_content_to_openai_message_simple_text():
     content = MagicMock(spec=conversation.Content)
     content.role = "user"
     content.content = "Hello world"
-    
+
     # Ensure it doesn't look like an assistant tool call structure
     if hasattr(content, "tool_calls"):
         content.tool_calls = None
