@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, AsyncMock
 
 from homeassistant.exceptions import HomeAssistantError
 
@@ -9,6 +9,7 @@ from custom_components.nova_conversation import async_setup
 # ----------------------------
 # FIXTURES (WERE MISSING)
 # ----------------------------
+
 
 @pytest.fixture
 def hass():
@@ -31,6 +32,7 @@ def entry():
 # ----------------------------
 # TESTS
 # ----------------------------
+
 
 @pytest.mark.asyncio
 async def test_generate_image_generic_error(hass, entry):
