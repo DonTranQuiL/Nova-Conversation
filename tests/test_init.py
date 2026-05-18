@@ -2,18 +2,48 @@ import pytest
 import openai
 from unittest.mock import MagicMock, AsyncMock, patch
 
-from homeassistant.exceptions import HomeAssistantError
 from custom_components.nova_conversation import (
     async_setup,
     async_setup_entry,
     async_unload_entry,
 )
+from custom_components.nova_conversation.const import (
+    DOMAIN,
+    CONF_BASE_URL,
+    SERVICE_GENERATE_IMAGE,
+)
+
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.config_entries import ConfigEntryNotReady
 
 
-# =========================
-# SETUP ENTRY TESTS
-# =========================
+# ===================== FIXTURES =====================
 
+@pytest.fixture
+def hass():
+    hass = MagicMock()
+    hass.data = {}
+    hass.services = MagicMock()
+    hass.config_entries = MagicMock()
+    return hass
+
+
+@pytest.fixture
+def entry():
+    entry = MagicMock()
+    entry.entry_id = "test_entry_id"
+    entry.title = "Nova"
+    entry.domain = DOMAIN
+    entry.data = {
+        "api_key": "test-key",
+        CONF_BASE_URL: "https://api.openai.com/v1",
+    }
+    entry.options = {}
+    entry.runtime_data = None
+    return entry
+
+
+# ===================== SETUP ENTRY =====================
 
 @pytest.mark.asyncio
 async def test_setup_entry_success(hass, entry):
@@ -76,17 +106,16 @@ async def test_setup_entry_not_ready(hass, entry):
     client.with_options.return_value = fake_chain
 
     with patch("openai.AsyncOpenAI", return_value=client):
-        with pytest.raises(Exception):
+        with pytest.raises(ConfigEntryNotReady):
             await async_setup_entry(hass, entry)
 
 
-# =========================
-# SERVICE REGISTRATION
-# =========================
-
+# ===================== SERVICE TESTS =====================
 
 @pytest.mark.asyncio
 async def test_async_setup_registers_service(hass):
+    hass.services.async_register = MagicMock()
+
     await async_setup(hass, {})
 
     hass.services.async_register.assert_called_once()
@@ -102,15 +131,10 @@ async def test_unload_entry(hass, entry):
     hass.config_entries.async_unload_platforms.assert_called_once()
 
 
-# =========================
-# IMAGE GENERATION TESTS
-# =========================
-
+# ===================== IMAGE GENERATION =====================
 
 @pytest.mark.asyncio
 async def test_generate_image_generic_error(hass, entry):
-    """FIXED: no OpenAIError construction"""
-
     await async_setup(hass, {})
     handler = hass.services.async_register.call_args[0][2]
 
@@ -127,16 +151,11 @@ async def test_generate_image_generic_error(hass, entry):
     client.images.generate = AsyncMock(side_effect=fail)
     entry.runtime_data = client
 
-    with patch("openai.OpenAIError", FakeOpenAIError):
-        with pytest.raises(HomeAssistantError):
-            await handler(
-                MagicMock(
-                    data={
-                        "config_entry": "test_entry_id",
-                        "prompt": "test",
-                        "size": "1024x1024",
-                        "quality": "standard",
-                        "style": "vivid",
-                    }
-                )
-            )
+    with pytest.raises(HomeAssistantError):
+        await handler(MagicMock(data={
+            "config_entry": "test_entry_id",
+            "prompt": "test",
+            "size": "1024x1024",
+            "quality": "standard",
+            "style": "vivid",
+        }))
