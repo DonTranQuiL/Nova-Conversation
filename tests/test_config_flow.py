@@ -89,7 +89,7 @@ async def test_options_flow_init_recommended(mock_get_client, hass: HomeAssistan
     hass.config_entries.async_get_known_entry = MagicMock(return_value=entry)
 
     result = await flow.async_step_init(user_input=None)
-    assert result["type"] == FlowResultType.SHOW_FORM
+    assert result["type"] == FlowResultType.FORM
     assert "init" == result["step_id"]
 
 
@@ -162,5 +162,5 @@ async def test_options_flow_toggle_recommended(hass: HomeAssistant):
     }
 
     result = await flow.async_step_init(user_input=user_input)
-    assert result["type"] == FlowResultType.SHOW_FORM
+    assert result["type"] == FlowResultType.FORM
     assert flow.last_rendered_recommended is True
