@@ -17,14 +17,14 @@ async def test_setup_entry_auth_error():
         CONF_BASE_URL: "https://api.openai.com/v1",
     }
 
-    # create client
+    # --- build correct async chain mock ---
+    models_mock = MagicMock()
+    models_mock.list = AsyncMock(side_effect=FakeOpenAIError("unauthorized"))
+
     client = MagicMock()
     client.platform_headers = True
 
-    async def raise_auth(*args, **kwargs):
-        raise FakeOpenAIError("unauthorized")
-
-    client.with_options.return_value.models.list = raise_auth
+    client.with_options.return_value.models = models_mock
 
     hass = MagicMock()
     hass.async_add_executor_job = AsyncMock(return_value=True)
