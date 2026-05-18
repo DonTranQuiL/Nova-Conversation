@@ -23,7 +23,7 @@ jobs:
           python -m pip install --upgrade pip
           
           # Install core testing tools AND pytest-cov for coverage
-          pip install pytest pytest-cov pytest-asyncio pytest-homeassistant-custom-component
+          pip install pytest pytest-cov pytest-asyncio pytest-homeassistant-custom-component hassil home-assistant-intents
           
           # MAGIC TRICK: Find the manifest.json, extract its requirements, and install them automatically!
           if ls custom_components/*/manifest.json 1> /dev/null 2>&1; then
