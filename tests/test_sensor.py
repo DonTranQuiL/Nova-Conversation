@@ -8,16 +8,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from custom_components.nova_conversation.const import (
-    CONF_CHAT_MODEL,
     CONF_ENABLE_TOOLS,
-    CONF_MAX_TOKENS,
-    DOMAIN,
 )
+
 
 # Architectural placeholders simulating components since nova_conversation operates dynamically
 class NovaConversationSensor:
     """Mock platform sensor matching the required architectural skeleton."""
-    
+
     def __init__(self, coordinator):
         self.coordinator = coordinator
         self.hass = None
@@ -30,9 +28,11 @@ class NovaConversationSensor:
     def _handle_coordinator_update(self):
         self.state = self.coordinator.data.get("status")
         self.icon = "mdi:brain"
-        
+
         # Tool enabling evaluation logic matching structural filter skeletons
-        enable_tools = self.coordinator.config_entry.options.get(CONF_ENABLE_TOOLS, True)
+        enable_tools = self.coordinator.config_entry.options.get(
+            CONF_ENABLE_TOOLS, True
+        )
         self._message_matches_filter = enable_tools
 
         self.extra_state_attributes = {
