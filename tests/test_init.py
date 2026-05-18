@@ -1,4 +1,5 @@
 import pytest
+from homeassistant.const import CONF_API_KEY, Platform
 from unittest.mock import MagicMock, AsyncMock, patch
 import openai
 
