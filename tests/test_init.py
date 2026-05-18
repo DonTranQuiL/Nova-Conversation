@@ -1,5 +1,5 @@
 import voluptuous as vol
-
+from unittest.mock import MagicMock, AsyncMock, patch
 def test_format_ha_tool_for_openai():
     """Test formatting a Home Assistant tool to OpenAI's spec."""
     mock_tool = MagicMock(spec=llm.Tool)
