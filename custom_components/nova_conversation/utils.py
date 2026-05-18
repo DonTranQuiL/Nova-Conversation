@@ -37,7 +37,7 @@ def format_ha_tool_for_openai(
 
 
 def convert_ha_content_to_openai_message(
-    content: conversation.Content,
+    content: Any,
 ) -> ChatCompletionMessageParam:
     """
     Convert Home Assistant's native chat log content into the OpenAI API message format.
