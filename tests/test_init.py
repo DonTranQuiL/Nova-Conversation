@@ -2,18 +2,18 @@ import pytest
 import openai
 from unittest.mock import MagicMock, AsyncMock, patch
 
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError
 from custom_components.nova_conversation import (
     async_setup,
     async_setup_entry,
     async_unload_entry,
 )
-from custom_components.nova_conversation.const import CONF_BASE_URL
 
 
 # =========================
 # SETUP ENTRY TESTS
 # =========================
+
 
 @pytest.mark.asyncio
 async def test_setup_entry_success(hass, entry):
@@ -84,6 +84,7 @@ async def test_setup_entry_not_ready(hass, entry):
 # SERVICE REGISTRATION
 # =========================
 
+
 @pytest.mark.asyncio
 async def test_async_setup_registers_service(hass):
     await async_setup(hass, {})
@@ -104,6 +105,7 @@ async def test_unload_entry(hass, entry):
 # =========================
 # IMAGE GENERATION TESTS
 # =========================
+
 
 @pytest.mark.asyncio
 async def test_generate_image_generic_error(hass, entry):
@@ -127,10 +129,14 @@ async def test_generate_image_generic_error(hass, entry):
 
     with patch("openai.OpenAIError", FakeOpenAIError):
         with pytest.raises(HomeAssistantError):
-            await handler(MagicMock(data={
-                "config_entry": "test_entry_id",
-                "prompt": "test",
-                "size": "1024x1024",
-                "quality": "standard",
-                "style": "vivid",
-            }))
+            await handler(
+                MagicMock(
+                    data={
+                        "config_entry": "test_entry_id",
+                        "prompt": "test",
+                        "size": "1024x1024",
+                        "quality": "standard",
+                        "style": "vivid",
+                    }
+                )
+            )
