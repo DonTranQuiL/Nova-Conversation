@@ -178,7 +178,9 @@ async def test_async_setup_entry_platform_header_exception(mock_openai, hass, en
     mock_client.with_options().models.list = AsyncMock()
     mock_openai.return_value = mock_client
 
-    hass.async_add_executor_job = AsyncMock(side_effect=Exception("Platform headers not supported"))
+    hass.async_add_executor_job = AsyncMock(
+        side_effect=Exception("Platform headers not supported")
+    )
     hass.config_entries.async_forward_entry_setups = AsyncMock(return_value=True)
 
     assert await async_setup_entry(hass, entry) is True
