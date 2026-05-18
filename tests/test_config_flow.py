@@ -8,10 +8,8 @@ from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.nova_conversation.config_flow import NovaConfigFlow
 from custom_components.nova_conversation.const import (
-    DOMAIN,
     CONF_BASE_URL,
     CONF_RECOMMENDED,
-    CONF_CHAT_MODEL,
     CONF_PROMPT,
     CONF_LLM_HASS_API,
 )
@@ -54,19 +52,25 @@ async def test_config_flow_errors(mock_validate, hass: HomeAssistant):
 
     # Test connection issues
     mock_validate.side_effect = openai.APIConnectionError(request=MagicMock())
-    result = await flow.async_step_user(user_input={"api_key": "key", CONF_BASE_URL: "url"})
+    result = await flow.async_step_user(
+        user_input={"api_key": "key", CONF_BASE_URL: "url"}
+    )
     assert result["errors"]["base"] == "cannot_connect"
 
     # Test auth validation problems
     mock_validate.side_effect = openai.AuthenticationError(
         message="Unauthorized", response=MagicMock(status_code=401), body=None
     )
-    result = await flow.async_step_user(user_input={"api_key": "key", CONF_BASE_URL: "url"})
+    result = await flow.async_step_user(
+        user_input={"api_key": "key", CONF_BASE_URL: "url"}
+    )
     assert result["errors"]["base"] == "invalid_auth"
 
     # Test completely unexpected exceptions
     mock_validate.side_effect = RuntimeWarning("Random bad event")
-    result = await flow.async_step_user(user_input={"api_key": "key", CONF_BASE_URL: "url"})
+    result = await flow.async_step_user(
+        user_input={"api_key": "key", CONF_BASE_URL: "url"}
+    )
     assert result["errors"]["base"] == "unknown"
 
 
@@ -102,8 +106,10 @@ async def test_options_flow_fetch_models_success(mock_get_client, hass: HomeAssi
 
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.json.return_value = {"data": [{"id": "nova-pro"}, {"id": "nova-lite"}]}
-    
+    mock_response.json.return_value = {
+        "data": [{"id": "nova-pro"}, {"id": "nova-lite"}]
+    }
+
     mock_client = MagicMock()
     mock_client.get = AsyncMock(return_value=mock_response)
     mock_get_client.return_value = mock_client
