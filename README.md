@@ -1,9 +1,8 @@
+<div align="center">
+
 # 🌌 Nova Conversation (2026 Edition)
 **The high-performance bridge for Local & Cloud AI in Home Assistant.**
-
-### 🚀 A Community Revival 
-Huge thanks to [Michelle Avery](https://github.com/michelle-avery) for the original project. Since the original repo has been inactive, I have fully rewritten the core architecture to bring it up to 2026.1+ standards, focusing on speed, reliability, and native streaming.
-
+</div>
 <p align="center">
   <!-- Release / License -->
   <a href="https://github.com/DonTranQuiL/Nova-Conversation/releases">
@@ -58,6 +57,13 @@ Huge thanks to [Michelle Avery](https://github.com/michelle-avery) for the origi
     <img src="https://img.shields.io/badge/community-forum-007ec6?style=for-the-badge" alt="Community">
   </a>
 </p>
+
+</div>
+
+### 🚀 A Community Revival 
+Huge thanks to [Michelle Avery](https://github.com/michelle-avery) for the original project. Since the original repo has been inactive, I have fully rewritten the core architecture to bring it up to 2026.1+ standards, focusing on speed, reliability, and native streaming.
+
+
 
 Bring the power of advanced Language Models to Home Assistant. This integration doesn't just chat—it physically controls your smart home and streams responses in real-time. Because it uses the universal OpenAI API standard, you can point this at **OpenRouter, LM Studio, LocalAI, Groq, Ollama**, or any compatible endpoint.
 
