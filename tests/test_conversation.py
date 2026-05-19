@@ -2,7 +2,7 @@ import pytest
 import openai
 from unittest.mock import MagicMock, AsyncMock, patch
 from homeassistant.components import conversation
-from homeassistant.core import HomeAssistant, Context
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.const import CONF_LLM_HASS_API
 

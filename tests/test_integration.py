@@ -1,4 +1,3 @@
-import os
 import pytest
 import respx
 from httpx import Response
@@ -26,6 +25,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 # =========================================================================
 # 1. CONFIG FLOW TESTS
 # =========================================================================
+
 
 @pytest.mark.asyncio
 async def test_config_flow_success(hass: HomeAssistant):
@@ -79,6 +79,7 @@ async def test_config_flow_invalid_auth(hass: HomeAssistant):
 # 2. OPTIONS FLOW TESTS (DYNAMIC MODEL LIST FETCHING)
 # =========================================================================
 
+
 @pytest.mark.asyncio
 @respx.mock
 async def test_options_flow_fetch_models(hass: HomeAssistant):
@@ -125,6 +126,7 @@ async def test_options_flow_fetch_models(hass: HomeAssistant):
 # =========================================================================
 # 3. CORE SERVICE TEST: IMAGE GENERATION
 # =========================================================================
+
 
 @pytest.mark.asyncio
 async def test_generate_image_service_call(hass: HomeAssistant):
@@ -173,15 +175,14 @@ async def test_generate_image_service_call(hass: HomeAssistant):
             return_response=True,
         )
 
-        assert service_response == {
-            "url": "https://images.openai.com/render_out.png"
-        }
+        assert service_response == {"url": "https://images.openai.com/render_out.png"}
         mock_client.images.generate.assert_called_once()
 
 
 # =========================================================================
 # 4. CONVERSATION LOOP TEST (STREAMING TEXT RESPONSE)
 # =========================================================================
+
 
 @pytest.mark.asyncio
 async def test_conversation_agent_streaming_text(hass: HomeAssistant):
