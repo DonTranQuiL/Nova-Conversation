@@ -1,3 +1,4 @@
+import os
 import pytest
 import respx
 from httpx import Response
@@ -5,7 +6,7 @@ import openai
 from unittest.mock import patch, MagicMock, AsyncMock
 
 from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigFlowResultStatus
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.const import CONF_API_KEY
 from homeassistant.components import conversation
 
@@ -26,7 +27,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 # 1. CONFIG FLOW TESTS
 # =========================================================================
 
-
 @pytest.mark.asyncio
 async def test_config_flow_success(hass: HomeAssistant):
     """Test successful initial config flow entry registration."""
@@ -37,7 +37,7 @@ async def test_config_flow_success(hass: HomeAssistant):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": "user"}
         )
-        assert result["type"] == ConfigFlowResultStatus.FORM
+        assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "user"
 
         result2 = await hass.config_entries.flow.async_configure(
@@ -47,7 +47,7 @@ async def test_config_flow_success(hass: HomeAssistant):
                 CONF_BASE_URL: "https://api.openai.com/v1",
             },
         )
-        assert result2["type"] == ConfigFlowResultStatus.CREATE_ENTRY
+        assert result2["type"] == FlowResultType.CREATE_ENTRY
         assert result2["title"] == "Nova Conversation"
         mock_validate.assert_called_once()
 
@@ -71,14 +71,13 @@ async def test_config_flow_invalid_auth(hass: HomeAssistant):
                 CONF_BASE_URL: "https://api.openai.com/v1",
             },
         )
-        assert result2["type"] == ConfigFlowResultStatus.FORM
+        assert result2["type"] == FlowResultType.FORM
         assert result2["errors"] == {"base": "invalid_auth"}
 
 
 # =========================================================================
 # 2. OPTIONS FLOW TESTS (DYNAMIC MODEL LIST FETCHING)
 # =========================================================================
-
 
 @pytest.mark.asyncio
 @respx.mock
@@ -104,7 +103,7 @@ async def test_options_flow_fetch_models(hass: HomeAssistant):
     )
 
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    assert result["type"] == ConfigFlowResultStatus.FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
@@ -120,13 +119,12 @@ async def test_options_flow_fetch_models(hass: HomeAssistant):
             CONF_TEMPERATURE: 0.8,
         },
     )
-    assert result2["type"] == ConfigFlowResultStatus.CREATE_ENTRY
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
 
 
 # =========================================================================
 # 3. CORE SERVICE TEST: IMAGE GENERATION
 # =========================================================================
-
 
 @pytest.mark.asyncio
 async def test_generate_image_service_call(hass: HomeAssistant):
@@ -175,14 +173,15 @@ async def test_generate_image_service_call(hass: HomeAssistant):
             return_response=True,
         )
 
-        assert service_response == {"url": "https://images.openai.com/render_out.png"}
+        assert service_response == {
+            "url": "https://images.openai.com/render_out.png"
+        }
         mock_client.images.generate.assert_called_once()
 
 
 # =========================================================================
 # 4. CONVERSATION LOOP TEST (STREAMING TEXT RESPONSE)
 # =========================================================================
-
 
 @pytest.mark.asyncio
 async def test_conversation_agent_streaming_text(hass: HomeAssistant):
