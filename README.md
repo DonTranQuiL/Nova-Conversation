@@ -54,7 +54,9 @@
 
 
 ### 🚀 A Community Revival 
-Huge thanks to [Michelle Avery](https://github.com/michelle-avery) for the original project. Since the original repo has been inactive, I have fully rewritten the core architecture to bring it up to 2026.1+ standards, focusing on speed, reliability, and native streaming. This repo does have CLI passing that means github installs the addon into hass and test it. 
+Huge thanks to [Michelle Avery](https://github.com/michelle-avery) for the original project. Since the original repo has been inactive, I have fully rewritten the core architecture to bring it up to 2026.1+ standards, focusing on speed, reliability, and native streaming. 
+
+This repo does have CL passing that means github installs the addon into hass and test it. 
 
 
 
