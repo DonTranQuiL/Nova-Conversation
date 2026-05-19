@@ -24,7 +24,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements_test.txt ]; then pip install -r requirements_test.txt; fi
-          pip install pytest pytest-asyncio pytest-homeassistant-custom-component pytest-cov respx hassil home_assistant_intents mutagen haffmpeg
+          pip install pytest pytest-asyncio pytest-homeassistant-custom-component pytest-cov respx hassil home_assistant_intents mutagen ha-ffmpeg
 
       - name: Run tests
         run: |
