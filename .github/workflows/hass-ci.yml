@@ -16,7 +16,6 @@ on:
       - "requirements_test.txt"
   workflow_dispatch:
 
-# Auto-cancels older running checks if you push a new update to the same branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -32,7 +31,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
