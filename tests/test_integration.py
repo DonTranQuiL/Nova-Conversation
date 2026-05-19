@@ -143,7 +143,7 @@ async def test_generate_image_service_call(hass: HomeAssistant):
     entry.add_to_hass(hass)
 
     # Reconstruct the expected object response hierarchy of the OpenAI client
-    mock_client = AsyncMock()
+    mock_client = MagicMock()
     mock_image_instance = MagicMock()
     mock_image_instance.model_dump.return_value = {
         "url": "https://images.openai.com/render_out.png"
@@ -217,7 +217,7 @@ async def test_conversation_agent_streaming_text(hass: HomeAssistant):
             chunk.choices = [choice]
             yield chunk
 
-    mock_client = AsyncMock()
+    mock_client = MagicMock()
     mock_client.with_options.return_value.models.list = AsyncMock()
     mock_client.chat.completions.create = AsyncMock(
         side_effect=mock_chat_stream_generator
