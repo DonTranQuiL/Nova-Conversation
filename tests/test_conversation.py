@@ -42,9 +42,7 @@ async def test_entity_properties_and_features():
 
 
 @pytest.mark.asyncio
-@patch(
-    "custom_components.nova_conversation.conversation.async_get_chat_session"
-)
+@patch("custom_components.nova_conversation.conversation.async_get_chat_session")
 @patch(
     "custom_components.nova_conversation.conversation.conversation.async_get_chat_log"
 )
