@@ -107,9 +107,7 @@ async def test_async_process_text_stream_success(
 
 
 @pytest.mark.asyncio
-@patch(
-    "custom_components.nova_conversation.conversation.async_get_chat_session"
-)
+@patch("custom_components.nova_conversation.conversation.async_get_chat_session")
 @patch(
     "custom_components.nova_conversation.conversation.conversation.async_get_chat_log"
 )
