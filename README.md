@@ -4,41 +4,36 @@
 **The high-performance bridge for Local & Cloud AI in Home Assistant.**
 </div>
 <p align="center">
-  <!-- Release / License -->
-  <a href="https://github.com/DonTranQuiL/Nova-Conversation/releases">
-    <img src="https://img.shields.io/github/v/release/DonTranQuiL/Nova-Conversation?style=for-the-badge&color=007ec6" alt="Latest Release">
+  <a href="https://github.com/DonTranQuiL/HA-Weerplaza/releases">
+    <img src="https://img.shields.io/github/v/release/DonTranQuiL/nova-conversation?style=for-the-badge&color=007ec6" alt="Latest Release">
   </a>
-  <a href="https://github.com/DonTranQuiL/Nova-Conversation/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/DonTranQuiL/Nova-Conversation?style=for-the-badge&color=007ec6" alt="License">
+  <a href="https://github.com/DonTranQuiL/HA-Weerplaza/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/DonTranQuiL/HA-Weerplaza?style=for-the-badge&color=007ec6" alt="License">
   </a>
-
-  <!-- CI / Quality -->
-  <a href="https://github.com/DonTranQuiL/Nova-Conversation/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/DonTranQuiL/Nova-Conversation/codechecker.yml?style=for-the-badge&label=CODE%20CHECKS&color=5dbb0f" alt="Code Checks">
-  </a>
-  <a href="https://github.com/DonTranQuiL/Nova-Conversation/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/DonTranQuiL/Nova-Conversation/pytest.yml?style=for-the-badge&label=TESTS&color=5dbb0f" alt="Tests">
-  </a>
-  <a href="https://github.com/DonTranQuiL/Nova-Conversation/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/DonTranQuiL/Nova-Conversation/hacs.yaml?style=for-the-badge&label=HACS%20VALIDATION&color=5dbb0f" alt="HACS Validation">
+  <a href="https://github.com/DonTranQuiL/HA-Weerplaza/actions/workflows/hass-ci.yml">
+    <img src="https://github.com/DonTranQuiL/HA-Weerplaza/actions/workflows/hass-ci.yml/badge.svg" alt="Home Assistant CI" style="height:28px;">
   </a>
 
-  <!-- Code Quality -->
+  <a href="https://github.com/DonTranQuiL/HA-Weerplaza/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/DonTranQuiL/HA-Weerplaza/codechecker.yml?style=for-the-badge&label=CODE%20CHECKS&color=5dbb0f" alt="Code Checks">
+  </a>
+  <a href="https://github.com/DonTranQuiL/HA-Weerplaza/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/DonTranQuiL/HA-Weerplaza/pytest.yml?style=for-the-badge&label=TESTS&color=5dbb0f" alt="Tests">
+  </a>
+  <a href="https://github.com/DonTranQuiL/HA-Weerplaza/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/DonTranQuiL/HA-Weerplaza/hacs.yaml?style=for-the-badge&label=HACS%20VALIDATION&color=5dbb0f" alt="HACS Validation">
+  </a>
+
   <a href="https://github.com/pre-commit/pre-commit">
     <img src="https://img.shields.io/badge/pre--commit-enabled-5dbb0f?style=for-the-badge" alt="pre-commit">
   </a>
   <a href="https://github.com/astral-sh/ruff">
     <img src="https://img.shields.io/badge/code%20style-ruff-000000?style=for-the-badge" alt="Ruff">
   </a>
-  <a href="https://codecov.io/gh/DonTranQuiL/Nova-Conversation">
-  <img 
-    src="https://codecov.io/gh/DonTranQuiL/Nova-Conversation/branch/main/graph/badge.svg"
-    alt="Coverage"
-    style="height:28px;"
-  >
-</a>
+  <a href="https://codecov.io/gh/DonTranQuiL/HA-Weerplaza">
+    <img src="https://codecov.io/gh/DonTranQuiL/HA-Weerplaza/branch/main/graph/badge.svg" alt="Coverage" style="height:28px;">
+  </a>
 
-  <!-- Ecosystem -->
   <a href="https://hacs.xyz/">
     <img src="https://img.shields.io/badge/HACS-CUSTOM-ff6e27?style=for-the-badge" alt="HACS">
   </a>
@@ -46,7 +41,6 @@
     <img src="https://img.shields.io/badge/Home%20Assistant-2024.5%2B-007ec6?style=for-the-badge" alt="Home Assistant">
   </a>
 
-  <!-- Social / Support -->
   <a href="https://github.com/DonTranQuiL">
     <img src="https://img.shields.io/badge/maintainer-%40DonTranQuiL-007ec6?style=for-the-badge" alt="Maintainer">
   </a>
@@ -58,10 +52,9 @@
   </a>
 </p>
 
-</div>
 
 ### 🚀 A Community Revival 
-Huge thanks to [Michelle Avery](https://github.com/michelle-avery) for the original project. Since the original repo has been inactive, I have fully rewritten the core architecture to bring it up to 2026.1+ standards, focusing on speed, reliability, and native streaming.
+Huge thanks to [Michelle Avery](https://github.com/michelle-avery) for the original project. Since the original repo has been inactive, I have fully rewritten the core architecture to bring it up to 2026.1+ standards, focusing on speed, reliability, and native streaming. This repo does have CLI passing that means github installs the addon into hass and test it. 
 
 
 
