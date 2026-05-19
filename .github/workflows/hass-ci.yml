@@ -3,9 +3,23 @@ name: Home Assistant CI
 on:
   push:
     branches: [ main ]
+    paths:
+      - "custom_components/**"
+      - "tests/**"
+      - "requirements_test.txt"
+      - ".github/workflows/hass-ci.yml"
   pull_request:
     branches: [ main ]
+    paths:
+      - "custom_components/**"
+      - "tests/**"
+      - "requirements_test.txt"
   workflow_dispatch:
+
+# Auto-cancels older running checks if you push a new update to the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -25,7 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements_test.txt ]; then pip install -r requirements_test.txt; fi
           pip install pytest pytest-asyncio pytest-homeassistant-custom-component pytest-cov respx
-          pip install hassil home_assistant_intents mutagen ha-ffmpeg pymicro-vad webrtc-noise-handling
+          pip install hassil home_assistant_intents mutagen ha-ffmpeg pymicro-vad webrtc-noise-gain
 
       - name: Run tests
         run: |
