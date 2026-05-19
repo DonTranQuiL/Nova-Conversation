@@ -97,9 +97,7 @@ class NovaConversationEntity(
     ) -> conversation.ConversationResult:
         """Process incoming natural language requests."""
         with (
-            async_get_chat_session(
-                self.hass, user_input.conversation_id
-            ) as session,
+            async_get_chat_session(self.hass, user_input.conversation_id) as session,
             conversation.async_get_chat_log(self.hass, session, user_input) as chat_log,
         ):
             return await self._execute_llm_stream(user_input, chat_log)
