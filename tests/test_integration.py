@@ -1,10 +1,11 @@
+import os
 import pytest
 import respx
 from httpx import Response
 import openai
 from unittest.mock import patch, MagicMock, AsyncMock
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, Context
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.const import CONF_API_KEY
 from homeassistant.components import conversation
@@ -25,7 +26,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 # =========================================================================
 # 1. CONFIG FLOW TESTS
 # =========================================================================
-
 
 @pytest.mark.asyncio
 async def test_config_flow_success(hass: HomeAssistant):
@@ -79,7 +79,6 @@ async def test_config_flow_invalid_auth(hass: HomeAssistant):
 # 2. OPTIONS FLOW TESTS (DYNAMIC MODEL LIST FETCHING)
 # =========================================================================
 
-
 @pytest.mark.asyncio
 @respx.mock
 async def test_options_flow_fetch_models(hass: HomeAssistant):
@@ -127,7 +126,6 @@ async def test_options_flow_fetch_models(hass: HomeAssistant):
 # 3. CORE SERVICE TEST: IMAGE GENERATION
 # =========================================================================
 
-
 @pytest.mark.asyncio
 async def test_generate_image_service_call(hass: HomeAssistant):
     """Test the specialized service callback to generate images using Dall-E."""
@@ -142,7 +140,7 @@ async def test_generate_image_service_call(hass: HomeAssistant):
     )
     entry.add_to_hass(hass)
 
-    # Reconstruct the expected object response hierarchy of the OpenAI client
+    # Use MagicMock instead of AsyncMock for the base client
     mock_client = MagicMock()
     mock_image_instance = MagicMock()
     mock_image_instance.model_dump.return_value = {
@@ -175,14 +173,15 @@ async def test_generate_image_service_call(hass: HomeAssistant):
             return_response=True,
         )
 
-        assert service_response == {"url": "https://images.openai.com/render_out.png"}
+        assert service_response == {
+            "url": "https://images.openai.com/render_out.png"
+        }
         mock_client.images.generate.assert_called_once()
 
 
 # =========================================================================
 # 4. CONVERSATION LOOP TEST (STREAMING TEXT RESPONSE)
 # =========================================================================
-
 
 @pytest.mark.asyncio
 async def test_conversation_agent_streaming_text(hass: HomeAssistant):
@@ -217,6 +216,7 @@ async def test_conversation_agent_streaming_text(hass: HomeAssistant):
             chunk.choices = [choice]
             yield chunk
 
+    # Use MagicMock instead of AsyncMock for the base client
     mock_client = MagicMock()
     mock_client.with_options.return_value.models.list = AsyncMock()
     mock_client.chat.completions.create = AsyncMock(
@@ -236,10 +236,12 @@ async def test_conversation_agent_streaming_text(hass: HomeAssistant):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        # Execute conversation input through the core engine proxy
-        agent_result = await conversation.async_process(
+        # Execute conversation input through the core engine proxy using async_converse
+        agent_result = await conversation.async_converse(
             hass,
             text="Ping agent",
+            conversation_id="test_session_id",
+            context=Context(),
             agent_id=entry.entry_id,
         )
 
