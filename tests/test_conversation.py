@@ -194,7 +194,7 @@ async def test_async_process_tool_call(
 
 @pytest.mark.asyncio
 @patch(
-    "custom_components.nova_conversation.conversation.chat_session.async_get_chat_session"
+    "custom_components.nova_conversation.conversation.async_get_chat_session"
 )
 @patch(
     "custom_components.nova_conversation.conversation.conversation.async_get_chat_log"
