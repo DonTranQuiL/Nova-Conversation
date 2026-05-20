@@ -1,25 +1,23 @@
-name-template: 'v$RESOLVED_VERSION'
-tag-template: 'v$RESOLVED_VERSION'
-categories:
-  - title: '🚀 Features'
-    labels:
-      - 'feature'
-      - 'enhancement'
-  - title: '🐛 Bug Fixes'
-    labels:
-      - 'fix'
-      - 'bug'
-  - title: '🧰 Maintenance & Refactoring'
-    labels:
-      - 'chore'
-      - 'refactor'
-      - 'dependencies'
-  - title: '📖 Documentation'
-    labels:
-      - 'documentation'
-change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
-template: |
-  ## What's Changed
-  $CHANGES
+name: Validate with hassfest
 
-  **Full Changelog**: https://github.com/DonTranQuiL/nova-conversation/commits/$RESOLVED_VERSION
+on:
+  push:
+  pull_request:
+
+jobs:
+  hassfest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run hassfest
+        uses: home-assistant/actions/hassfest@master
