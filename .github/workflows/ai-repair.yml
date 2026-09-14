@@ -20,10 +20,13 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          # Check out the branch where the failure occurred rather than the default branch
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -37,7 +40,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Downloading failed test logs..."
-
           gh run view \
             ${{ github.event.workflow_run.id }} \
             --log-failed > failed_logs.txt || true
@@ -55,6 +57,8 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           python ai_engineer/repair.py
+          # Delete the log file so it is not committed to the repository
+          rm -f failed_logs.txt
 
       - name: Show Changed Files
         run: |
@@ -65,25 +69,20 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ github.event.workflow_run.head_branch }}
+          branch: ai/auto-heal-${{ github.event.workflow_run.head_branch }}
+          delete-branch: true
           title: "🤖 AI Auto-Fix: CI Test Failure"
           body: |
             ## 🤖 AI Self-Healing CI
 
-            The AI Staff Engineer detected a failure in the
-            **Python Tests** workflow.
+            The AI Self-Healing Mechanic detected a failure in the **Python Tests** workflow on `${{ github.event.workflow_run.head_branch }}`.
 
-            The failed logs were analyzed and an automated
-            repair was generated.
+            The failed logs were analyzed and an automated patch was applied.
 
             ### Please review before merging
-
-            This pull request was created automatically by
-            the AI Self-Healing workflow.
-
-          branch: ai/auto-heal-patch
-          delete-branch: true
+            This pull request was created automatically by the AI Self-Healing workflow.
           labels: |
             ai-fix
             automated pr
           commit-message: "🤖 Fix failing tests"
-
