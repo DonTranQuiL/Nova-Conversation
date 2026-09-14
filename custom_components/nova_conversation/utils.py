@@ -5,7 +5,6 @@ from collections.abc import Callable
 from typing import Any, cast
 
 from homeassistant.helpers import llm
-
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageParam,

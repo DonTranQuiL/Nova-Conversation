@@ -9,7 +9,6 @@ from typing import Any
 import httpx
 import openai
 import voluptuous as vol
-
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -21,31 +20,31 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import llm
 from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     NumberSelector,
     NumberSelectorConfig,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     TemplateSelector,
-    BooleanSelector,
 )
 from homeassistant.helpers.typing import VolDictType
 
 from .const import (
+    CONF_BASE_URL,
     CONF_CHAT_MODEL,
+    CONF_ENABLE_TOOLS,
     CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_RECOMMENDED,
     CONF_TEMPERATURE,
     CONF_TOP_P,
     DOMAIN,
+    RECOMMENDED_BASE_URL,
     RECOMMENDED_CHAT_MODEL,
     RECOMMENDED_MAX_TOKENS,
     RECOMMENDED_TEMPERATURE,
     RECOMMENDED_TOP_P,
-    CONF_BASE_URL,
-    RECOMMENDED_BASE_URL,
-    CONF_ENABLE_TOOLS,
 )
 
 _LOGGER = logging.getLogger(__name__)

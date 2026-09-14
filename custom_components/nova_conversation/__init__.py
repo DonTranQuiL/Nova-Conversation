@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import logging
+
 import openai
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, Platform
 from homeassistant.core import (
@@ -19,11 +19,12 @@ from homeassistant.exceptions import (
     HomeAssistantError,
     ServiceValidationError,
 )
-from homeassistant.helpers import config_validation as cv, selector
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import selector
 from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, CONF_BASE_URL
+from .const import CONF_BASE_URL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 

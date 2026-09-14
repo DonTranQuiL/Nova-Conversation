@@ -1,15 +1,15 @@
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-import openai
-import voluptuous as vol
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import openai
+import pytest
+import voluptuous as vol
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_API_KEY, Platform
 from homeassistant.exceptions import (
+    ConfigEntryNotReady,
     HomeAssistantError,
     ServiceValidationError,
-    ConfigEntryNotReady,
 )
-from homeassistant.const import CONF_API_KEY, Platform
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import llm
 
 from custom_components.nova_conversation import (
@@ -17,12 +17,11 @@ from custom_components.nova_conversation import (
     async_setup_entry,
     async_unload_entry,
 )
+from custom_components.nova_conversation.const import CONF_BASE_URL, DOMAIN
 from custom_components.nova_conversation.utils import (
-    format_ha_tool_for_openai,
     convert_ha_content_to_openai_message,
+    format_ha_tool_for_openai,
 )
-from custom_components.nova_conversation.const import DOMAIN, CONF_BASE_URL
-
 
 # ----------------------------
 # FIXTURES

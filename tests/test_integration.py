@@ -1,26 +1,25 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import openai
 import pytest
 import respx
-from httpx import Response
-import openai
-from unittest.mock import patch, MagicMock, AsyncMock
-
-from homeassistant.core import HomeAssistant, Context
-from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.const import CONF_API_KEY
 from homeassistant.components import conversation
+from homeassistant.const import CONF_API_KEY
+from homeassistant.core import Context, HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
+from httpx import Response
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.nova_conversation.const import (
-    DOMAIN,
     CONF_BASE_URL,
     CONF_CHAT_MODEL,
     CONF_ENABLE_TOOLS,
     CONF_MAX_TOKENS,
+    CONF_PROMPT,
     CONF_TEMPERATURE,
     CONF_TOP_P,
-    CONF_PROMPT,
+    DOMAIN,
 )
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 
 # =========================================================================
 # 1. CONFIG FLOW TESTS

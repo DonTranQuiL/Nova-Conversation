@@ -1,14 +1,15 @@
-import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import openai
-from unittest.mock import MagicMock, AsyncMock, patch
+import pytest
 from homeassistant.components import conversation
+from homeassistant.const import CONF_LLM_HASS_API
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.const import CONF_LLM_HASS_API
 
 from custom_components.nova_conversation.conversation import (
-    async_setup_entry,
     NovaConversationEntity,
+    async_setup_entry,
 )
 
 

@@ -1,17 +1,18 @@
-import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import httpx
 import openai
-from unittest.mock import MagicMock, AsyncMock, patch
+import pytest
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_LLM_HASS_API
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.const import CONF_LLM_HASS_API
 
 from custom_components.nova_conversation.config_flow import NovaConfigFlow
 from custom_components.nova_conversation.const import (
     CONF_BASE_URL,
-    CONF_RECOMMENDED,
     CONF_PROMPT,
+    CONF_RECOMMENDED,
 )
 
 
