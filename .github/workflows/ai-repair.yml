@@ -2,21 +2,22 @@ name: AI Self-Healing CI
 
 on:
   workflow_run:
-    # IMPORTANT: Change "Tests" to whatever the exact name of your testing workflow is in your other .yml files.
-    workflows: ["Python Tests"] 
+    workflows: ["Python Tests"]
     types:
       - completed
 
 jobs:
   auto-heal:
-    # Only run this if the tests actually failed
+    # Only run when the Python Tests workflow failed
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
       pull-requests: write
       actions: read
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -27,26 +28,62 @@ jobs:
           python-version: "3.12"
 
       - name: Install Dependencies
-        run: pip install requests openai
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests openai
 
       - name: Download Failed Logs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # We use the built-in GitHub CLI to easily grab the error logs
         run: |
-          gh run view ${{ github.event.workflow_run.id }} --log-failed > failed_logs.txt || echo "Could not fetch logs"
+          echo "Downloading failed test logs..."
+
+          gh run view \
+            ${{ github.event.workflow_run.id }} \
+            --log-failed > failed_logs.txt || true
+
+          if [ ! -s failed_logs.txt ]; then
+            echo "Could not fetch failed logs."
+            echo "No logs were available." > failed_logs.txt
+          fi
+
+          echo "Failed log size:"
+          wc -c failed_logs.txt
 
       - name: Run AI Repair Agent
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: python ai_engineer/repair.py
+        run: |
+          python ai_engineer/repair.py
+
+      - name: Show Changed Files
+        run: |
+          echo "Files changed by AI:"
+          git status --short
 
       - name: Create Pull Request with Fix
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.REPO_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           title: "🤖 AI Auto-Fix: CI Test Failure"
-          body: "The AI Staff Engineer detected a CI failure, read the logs, and generated this patch to fix the build."
-          branch: "ai/auto-heal-patch"
-          labels: "ai-fix, automated pr"
+          body: |
+            ## 🤖 AI Self-Healing CI
+
+            The AI Staff Engineer detected a failure in the
+            **Python Tests** workflow.
+
+            The failed logs were analyzed and an automated
+            repair was generated.
+
+            ### Please review before merging
+
+            This pull request was created automatically by
+            the AI Self-Healing workflow.
+
+          branch: ai/auto-heal-patch
+          delete-branch: true
+          labels: |
+            ai-fix
+            automated pr
           commit-message: "🤖 Fix failing tests"
+
