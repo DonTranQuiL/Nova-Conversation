@@ -5,46 +5,24 @@ from openai import OpenAI
 # 1. Get the error logs
 try:
     with open("failed_logs.txt", "r") as f:
-        logs = f.read()[-4000:]
+        logs = f.read()[-3000:]
 except FileNotFoundError:
     print("No failed_logs.txt found. Exiting.")
     exit(0)
 
-# 2. Extract the broken file path
-# Matches:
-# - Ruff syntax: --> path/to/file.py:21:6
-# - Python tracebacks: File "path/to/file.py", line 21
-# - Pytest assertion failures: path/to/file.py:21: AssertionError
-patterns = [
-    r'-->\s+([a-zA-Z0-9_\-/\\]+\.py):',
-    r'File\s+"([a-zA-Z0-9_\-/\\]+\.py)"',
-    r'([a-zA-Z0-9_\-/\\]+\.py):\d+:',
-]
+# 2. Extract the broken file path from the Ruff/Pytest logs using Regex
+# This looks for lines like "--> ai_engineer/repair.py:21:6"
+match = re.search(r"-->\s+([a-zA-Z0-9_/\.]+):", logs)
+file_path = match.group(1) if match else None
+file_content = "File content could not be loaded."
 
-file_path = None
-for pattern in patterns:
-    matches = re.findall(pattern, logs)
-    for candidate in reversed(matches):
-        # Ignore external library/runner paths
-        if "site-packages" not in candidate and ".venv" not in candidate:
-            if os.path.exists(candidate):
-                file_path = candidate
-                break
-    if file_path:
-        break
-
-if not file_path:
-    print("Could not identify a repo file responsible for the failure.")
-    print("This usually indicates a missing dependency, runner issue, or environmental error.")
-    exit(0)
-
-# 3. Read the broken code
-try:
-    with open(file_path, "r") as f:
-        file_content = f.read()
-except FileNotFoundError:
-    print(f"Could not open extracted file path: {file_path}")
-    exit(0)
+# 3. Read the broken code so the AI can actually see it
+if file_path:
+    try:
+        with open(file_path, "r") as f:
+            file_content = f.read()
+    except FileNotFoundError:
+        print(f"Could not open extracted file path: {file_path}")
 
 # 4. Initialize AI
 api_key = os.getenv("OPENROUTER_API_KEY")
@@ -86,11 +64,12 @@ try:
 
     response_text = completion.choices[0].message.content.strip()
 
+    # 7. Print Snoop's explanation to the GitHub Actions terminal so you can read it!
     print("\n--- AI MECHANIC REPORT ---")
     print(response_text)
     print("--------------------------\n")
 
-    # 7. Parse the code out of the response
+    # 8. Parse the code out of the response
     lines = response_text.splitlines()
     target_file = None
     code_lines = []
@@ -98,25 +77,23 @@ try:
 
     for line in lines:
         if line.startswith("FILEPATH:"):
-            parsed_target = line.replace("FILEPATH:", "").strip()
-            if parsed_target and parsed_target != "None":
-                target_file = parsed_target
+            target_file = line.replace("FILEPATH:", "").strip()
         elif line.startswith("CODE:") or line.startswith("```python"):
             is_code = True
-            continue
+            continue  # skip the marker line
         elif is_code:
             if line.startswith("```"):
-                is_code = False
+                is_code = False  # End of block
             else:
                 code_lines.append(line)
 
-    # 8. Apply the fix
-    if target_file and os.path.exists(target_file) and code_lines:
+    # 9. Apply the fix
+    if target_file and code_lines:
         with open(target_file, "w") as f:
             f.write("\n".join(code_lines))
         print(f"Patched {target_file} successfully.")
     else:
-        print(f"Aborting: Invalid target file ({target_file}) or no patch code generated.")
+        print("Failed to parse the patched code from the AI response.")
 
 except Exception as e:
     print(f"Repair failed: {e}")

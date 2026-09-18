@@ -2,87 +2,51 @@ name: AI Self-Healing CI
 
 on:
   workflow_run:
-    workflows: ["Python Tests"]
+    # IMPORTANT: Change "Tests" to whatever the exact name of your testing workflow is in your other .yml files.
+    workflows: ["Python Tests"] 
     types:
       - completed
 
 jobs:
   auto-heal:
-    # Only run when the Python Tests workflow failed
+    # Only run this if the tests actually failed
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
-
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
       pull-requests: write
       actions: read
-
+    
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          # Check out the branch where the failure occurred rather than the default branch
-          ref: ${{ github.event.workflow_run.head_branch }}
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests openai
+        run: pip install requests openai
 
       - name: Download Failed Logs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # We use the built-in GitHub CLI to easily grab the error logs
         run: |
-          echo "Downloading failed test logs..."
-          gh run view \
-            ${{ github.event.workflow_run.id }} \
-            --log-failed > failed_logs.txt || true
-
-          if [ ! -s failed_logs.txt ]; then
-            echo "Could not fetch failed logs."
-            echo "No logs were available." > failed_logs.txt
-          fi
-
-          echo "Failed log size:"
-          wc -c failed_logs.txt
+          gh run view ${{ github.event.workflow_run.id }} --log-failed > failed_logs.txt || echo "Could not fetch logs"
 
       - name: Run AI Repair Agent
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: |
-          python ai_engineer/repair.py
-          # Delete the log file so it is not committed to the repository
-          rm -f failed_logs.txt
-
-      - name: Show Changed Files
-        run: |
-          echo "Files changed by AI:"
-          git status --short
+        run: python ai_engineer/repair.py
 
       - name: Create Pull Request with Fix
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ github.event.workflow_run.head_branch }}
-          branch: ai/auto-heal-${{ github.event.workflow_run.head_branch }}
-          delete-branch: true
+          token: ${{ secrets.REPO_PAT }}
           title: "🤖 AI Auto-Fix: CI Test Failure"
-          body: |
-            ## 🤖 AI Self-Healing CI
-
-            The AI Self-Healing Mechanic detected a failure in the **Python Tests** workflow on `${{ github.event.workflow_run.head_branch }}`.
-
-            The failed logs were analyzed and an automated patch was applied.
-
-            ### Please review before merging
-            This pull request was created automatically by the AI Self-Healing workflow.
-          labels: |
-            ai-fix
-            automated pr
+          body: "The AI Staff Engineer detected a CI failure, read the logs, and generated this patch to fix the build."
+          branch: "ai/auto-heal-patch"
+          labels: "ai-fix, automated pr"
           commit-message: "🤖 Fix failing tests"
