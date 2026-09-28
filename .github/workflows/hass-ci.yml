@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -38,7 +38,9 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements_test.txt ]; then pip install -r requirements_test.txt; fi
           pip install pytest pytest-asyncio pytest-homeassistant-custom-component pytest-cov respx
-          pip install hassil home_assistant_intents mutagen ha-ffmpeg pymicro-vad webrtc-noise-gain pyspeex-noise
+          pip install mutagen ha-ffmpeg pymicro-vad webrtc-noise-gain pyspeex-noise
+          # Install the hassil/intents versions pinned by HA's conversation component (latest hassil lacks hassil.fuzzy)
+          python -c "import os, json, homeassistant; print('\n'.join(json.load(open(os.path.join(os.path.dirname(homeassistant.__file__), 'components/conversation/manifest.json'))).get('requirements', [])))" | xargs -r pip install
 
       - name: Run tests
         run: |
