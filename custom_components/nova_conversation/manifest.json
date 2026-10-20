@@ -5,10 +5,6 @@
     "assist_pipeline",
     "intent"
   ],
-  "categories": [
-    "ai_voice.ai_models",
-    "ai_voice.voice_assistants"
-  ],
   "codeowners": [
     "@DonTranQuiL"
   ],
